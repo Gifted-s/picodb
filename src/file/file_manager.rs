@@ -79,10 +79,7 @@ mod tests {
 
         let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
         let block_id = BlockId::new(file_name, 0);
-        let result = file_manager.write(
-            &block_id,
-            b"RocksDB is an LSM-based storage engine",
-        );
+        let result = file_manager.write(&block_id, b"RocksDB is an LSM-based storage engine");
         assert!(result.is_ok());
     }
 
@@ -99,9 +96,7 @@ mod tests {
         assert!(result.is_ok());
 
         let mut read_buffer = vec![0; write_buffer.len()];
-        file_manager
-            .read_into(&block_id, &mut read_buffer)
-            .unwrap();
+        file_manager.read_into(&block_id, &mut read_buffer).unwrap();
 
         assert_eq!(read_buffer, write_buffer);
     }
@@ -119,9 +114,7 @@ mod tests {
         assert!(result.is_ok());
 
         let mut read_buffer = vec![0; write_buffer.len()];
-        file_manager
-            .read_into(&block_id, &mut read_buffer)
-            .unwrap();
+        file_manager.read_into(&block_id, &mut read_buffer).unwrap();
 
         assert_eq!(read_buffer, write_buffer);
     }
