@@ -93,17 +93,17 @@ mod tests {
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let content = b"RocksDB is an LSM-based storage engine";
+        let write_buffer = b"RocksDB is an LSM-based storage engine";
         let block_id = BlockId::new(file_name, 0);
-        let result = file_manager.write(&block_id, content);
+        let result = file_manager.write(&block_id, write_buffer);
         assert!(result.is_ok());
 
-        let mut buf = vec![0; content.len()];
+        let mut read_buffer = vec![0; write_buffer.len()];
         file_manager
-            .read_into(&block_id, &mut buf)
+            .read_into(&block_id, &mut read_buffer)
             .unwrap();
 
-        assert_eq!(buf, content);
+        assert_eq!(read_buffer, write_buffer);
     }
 
     #[test]
@@ -113,16 +113,16 @@ mod tests {
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let content = b"PebbleDB is an LSM-based storage engine";
+        let write_buffer = b"PebbleDB is an LSM-based storage engine";
         let block_id = BlockId::new(file_name, 5);
-        let result = file_manager.write(&block_id, content);
+        let result = file_manager.write(&block_id, write_buffer);
         assert!(result.is_ok());
 
-        let mut buf = vec![0; content.len()];
+        let mut read_buffer = vec![0; write_buffer.len()];
         file_manager
-            .read_into(&block_id, &mut buf)
+            .read_into(&block_id, &mut read_buffer)
             .unwrap();
 
-        assert_eq!(buf, content);
+        assert_eq!(read_buffer, write_buffer);
     }
 }
