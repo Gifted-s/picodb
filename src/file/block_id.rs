@@ -1,19 +1,23 @@
 #[derive(Debug, PartialEq, Eq)]
-struct BlockId {
+pub(crate) struct BlockId {
     file_name: String,
     pub(crate) block_number: usize,
 }
 
 impl BlockId {
-    fn new(file_name: &str, block_number: usize) -> Self {
+    pub(crate) fn new(file_name: &str, block_number: usize) -> Self {
         BlockId {
             file_name: file_name.to_owned(),
             block_number,
         }
     }
 
-    fn starting_offset(&self, block_size: usize) -> i64 {
+    pub(crate) fn starting_offset(&self, block_size: usize) -> i64 {
         block_size as i64 * self.block_number as i64
+    }
+
+    pub(crate) fn file_name(&self) -> &str {
+        &self.file_name
     }
 
     fn previous(&self) -> Option<Self> {
