@@ -7,7 +7,7 @@ pub(crate) struct StartingOffsets {
 }
 
 impl StartingOffsets {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self { offsets: vec![] }
     }
 
@@ -21,20 +21,32 @@ impl StartingOffsets {
         starting_offsets
     }
 
-    fn add_offset(&mut self, offset: u32) {
+    pub(crate) fn add_offset(&mut self, offset: u32) {
         self.offsets.push(offset);
     }
 
-    fn offset_at(&self, index: usize) -> Option<&u32> {
+    pub(crate) fn offset_at(&self, index: usize) -> Option<&u32> {
         self.offsets.get(index)
     }
 
-    fn encode(&self) -> Vec<u8> {
+    pub(crate) fn encode(&self) -> Vec<u8> {
         let mut encoded_offsets = Vec::with_capacity(self.offsets.len() * SIZE_OF_OFFSET);
         for &offset in &self.offsets {
             encoded_offsets.extend(&offset.to_le_bytes());
         }
         encoded_offsets
+    }
+
+    pub(crate) fn size_in_bytes(&self) -> usize {
+        self.offsets.len() * SIZE_OF_OFFSET
+    }
+
+    pub(crate) fn size_in_bytes_for_an_offset() -> usize {
+        SIZE_OF_OFFSET
+    }
+
+    pub(crate) fn length(&self) -> usize {
+        self.offsets.len()
     }
 }
 

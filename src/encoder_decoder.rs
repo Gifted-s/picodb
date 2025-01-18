@@ -2,16 +2,16 @@ use byteorder::ByteOrder;
 
 type BytesNeededForEncoding = usize;
 type EndOffset = usize;
-struct EncoderDecoder;
+pub(crate) struct EncoderDecoder;
 
 impl EncoderDecoder {
     const RESERVED_SIZE_FOR_BYTE_SLICE: usize = size_of::<u16>();
 
-    fn bytes_needed_for(buffer: &[u8]) -> BytesNeededForEncoding {
+    pub(crate) fn bytes_needed_for(buffer: &[u8]) -> BytesNeededForEncoding {
         Self::RESERVED_SIZE_FOR_BYTE_SLICE + buffer.len()
     }
 
-    fn encode_bytes(
+    pub(crate) fn encode_bytes(
         source: &[u8],
         destination: &mut [u8],
         destination_starting_offset: usize,
@@ -36,15 +36,14 @@ impl EncoderDecoder {
         required_size
     }
 
-    fn decode_bytes(encoded: &[u8], from_offset: usize) -> (Vec<u8>, EndOffset) {
-        let source_length = byteorder::LittleEndian::read_u16(&encoded[0..2]);
+    pub(crate) fn decode_bytes(encoded: &[u8], from_offset: usize) -> (&[u8], EndOffset) {
+        let source_length = byteorder::LittleEndian::read_u16(&encoded[from_offset..]);
         let end_offset = from_offset + Self::RESERVED_SIZE_FOR_BYTE_SLICE + source_length as usize;
 
-        let mut decoded = vec![0; source_length as usize];
-        decoded.copy_from_slice(
+        (
             &encoded[from_offset + Self::RESERVED_SIZE_FOR_BYTE_SLICE..end_offset],
-        );
-        (decoded, end_offset)
+            end_offset,
+        )
     }
 }
 
@@ -72,6 +71,19 @@ mod tests {
 
         let (decoded, _) =
             EncoderDecoder::decode_bytes(&destination[..number_of_bytes_for_encoding], 0);
+
+        assert_eq!(&decoded[..], &source[..]);
+    }
+
+    #[test]
+    fn encode_decode_bytes_at_a_different_offset() {
+        let source = b"Rocks is LSM-based";
+        let mut destination = vec![0; 100];
+        let number_of_bytes_for_encoding =
+            EncoderDecoder::encode_bytes(&source[..], &mut destination, 10);
+
+        let (decoded, _) =
+            EncoderDecoder::decode_bytes(&destination[..], 10);
 
         assert_eq!(&decoded[..], &source[..]);
     }
