@@ -1,20 +1,5 @@
 use byteorder::ByteOrder;
-
-type BytesNeededForEncoding = usize;
-type EndOffset = usize;
-
-pub(crate) trait EncoderDecoder<T: ?Sized> {
-    fn bytes_needed_for_encoding(&self, source: &T) -> BytesNeededForEncoding;
-
-    fn encode(
-        &self,
-        source: &T,
-        destination: &mut [u8],
-        destination_starting_offset: usize,
-    ) -> BytesNeededForEncoding;
-
-    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (&'a T, EndOffset);
-}
+use crate::encodex::{BytesNeededForEncoding, EncoderDecoder, EndOffset};
 
 pub(crate) struct BytesEncoderDecoder;
 
@@ -23,7 +8,10 @@ impl BytesEncoderDecoder {
 }
 
 impl EncoderDecoder<[u8]> for BytesEncoderDecoder {
-    fn bytes_needed_for_encoding(&self, source: &[u8]) -> BytesNeededForEncoding {
+    fn bytes_needed_for_encoding(
+        &self,
+        source: &[u8],
+    ) -> BytesNeededForEncoding {
         Self::RESERVED_SIZE_FOR_BYTE_SLICE + source.len()
     }
 
@@ -53,7 +41,11 @@ impl EncoderDecoder<[u8]> for BytesEncoderDecoder {
         required_size
     }
 
-    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (&'a [u8], EndOffset) {
+    fn decode<'a>(
+        &self,
+        encoded: &'a [u8],
+        from_offset: usize,
+    ) -> (&'a [u8], EndOffset) {
         let source_length = byteorder::LittleEndian::read_u16(&encoded[from_offset..]);
         let end_offset = from_offset + Self::RESERVED_SIZE_FOR_BYTE_SLICE + source_length as usize;
         (
@@ -65,7 +57,8 @@ impl EncoderDecoder<[u8]> for BytesEncoderDecoder {
 
 #[cfg(test)]
 mod tests {
-    use crate::encoder_decoder::{BytesEncoderDecoder, EncoderDecoder};
+    use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
+    use crate::encodex::EncoderDecoder;
 
     #[test]
     fn numer_of_bytes_needed_for_encoding_bytes() {

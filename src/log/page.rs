@@ -1,4 +1,5 @@
-use crate::encoder_decoder::{BytesEncoderDecoder, EncoderDecoder};
+use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
+use crate::encodex::EncoderDecoder;
 use crate::file::starting_offsets::StartingOffsets;
 use byteorder::ByteOrder;
 
