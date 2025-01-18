@@ -2,16 +2,33 @@ use byteorder::ByteOrder;
 
 type BytesNeededForEncoding = usize;
 type EndOffset = usize;
-pub(crate) struct EncoderDecoder;
 
-impl EncoderDecoder {
+pub(crate) trait EncoderDecoder<T: ?Sized> {
+    fn bytes_needed_for_encoding(&self, source: &T) -> BytesNeededForEncoding;
+
+    fn encode(
+        &self,
+        source: &T,
+        destination: &mut [u8],
+        destination_starting_offset: usize,
+    ) -> BytesNeededForEncoding;
+
+    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (&'a T, EndOffset);
+}
+
+pub(crate) struct BytesEncoderDecoder;
+
+impl BytesEncoderDecoder {
     const RESERVED_SIZE_FOR_BYTE_SLICE: usize = size_of::<u16>();
+}
 
-    pub(crate) fn bytes_needed_for(buffer: &[u8]) -> BytesNeededForEncoding {
-        Self::RESERVED_SIZE_FOR_BYTE_SLICE + buffer.len()
+impl EncoderDecoder<[u8]> for BytesEncoderDecoder {
+    fn bytes_needed_for_encoding(&self, source: &[u8]) -> BytesNeededForEncoding {
+        Self::RESERVED_SIZE_FOR_BYTE_SLICE + source.len()
     }
 
-    pub(crate) fn encode_bytes(
+    fn encode(
+        &self,
         source: &[u8],
         destination: &mut [u8],
         destination_starting_offset: usize,
@@ -36,10 +53,9 @@ impl EncoderDecoder {
         required_size
     }
 
-    pub(crate) fn decode_bytes(encoded: &[u8], from_offset: usize) -> (&[u8], EndOffset) {
+    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (&'a [u8], EndOffset) {
         let source_length = byteorder::LittleEndian::read_u16(&encoded[from_offset..]);
         let end_offset = from_offset + Self::RESERVED_SIZE_FOR_BYTE_SLICE + source_length as usize;
-
         (
             &encoded[from_offset + Self::RESERVED_SIZE_FOR_BYTE_SLICE..end_offset],
             end_offset,
@@ -49,7 +65,7 @@ impl EncoderDecoder {
 
 #[cfg(test)]
 mod tests {
-    use crate::encoder_decoder::EncoderDecoder;
+    use crate::encoder_decoder::{BytesEncoderDecoder, EncoderDecoder};
 
     #[test]
     fn numer_of_bytes_needed_for_encoding_bytes() {
@@ -57,8 +73,8 @@ mod tests {
         let source_length = source.len();
 
         assert_eq!(
-            source_length + EncoderDecoder::RESERVED_SIZE_FOR_BYTE_SLICE,
-            EncoderDecoder::bytes_needed_for(&source[..])
+            source_length + BytesEncoderDecoder::RESERVED_SIZE_FOR_BYTE_SLICE,
+            BytesEncoderDecoder.bytes_needed_for_encoding(&source[..])
         );
     }
 
@@ -66,11 +82,12 @@ mod tests {
     fn encode_decode_bytes() {
         let source = b"Rocks is LSM-based";
         let mut destination = vec![0; 100];
+
         let number_of_bytes_for_encoding =
-            EncoderDecoder::encode_bytes(&source[..], &mut destination, 0);
+            BytesEncoderDecoder.encode(&source[..], &mut destination, 0);
 
         let (decoded, _) =
-            EncoderDecoder::decode_bytes(&destination[..number_of_bytes_for_encoding], 0);
+            BytesEncoderDecoder.decode(&destination[..number_of_bytes_for_encoding], 0);
 
         assert_eq!(&decoded[..], &source[..]);
     }
@@ -79,10 +96,9 @@ mod tests {
     fn encode_decode_bytes_at_a_different_offset() {
         let source = b"Rocks is LSM-based";
         let mut destination = vec![0; 100];
-        let number_of_bytes_for_encoding =
-            EncoderDecoder::encode_bytes(&source[..], &mut destination, 10);
+        let _ = BytesEncoderDecoder.encode(&source[..], &mut destination, 10);
 
-        let (decoded, _) = EncoderDecoder::decode_bytes(&destination[..], 10);
+        let (decoded, _) = BytesEncoderDecoder.decode(&destination[..], 10);
 
         assert_eq!(&decoded[..], &source[..]);
     }

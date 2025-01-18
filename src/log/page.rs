@@ -1,4 +1,4 @@
-use crate::encoder_decoder::EncoderDecoder;
+use crate::encoder_decoder::{BytesEncoderDecoder, EncoderDecoder};
 use crate::file::starting_offsets::StartingOffsets;
 use byteorder::ByteOrder;
 
@@ -47,14 +47,14 @@ impl Page {
             .add_offset(self.current_write_offset as u32);
 
         let bytes_needed_for_encoding =
-            EncoderDecoder::encode_bytes(data, &mut self.buffer, self.current_write_offset);
+            BytesEncoderDecoder.encode(data, &mut self.buffer, self.current_write_offset);
 
         self.current_write_offset += bytes_needed_for_encoding;
         true
     }
 
     fn bytes_at(&self, offset: usize) -> &[u8] {
-        let (decoded, _) = EncoderDecoder::decode_bytes(&self.buffer, offset);
+        let (decoded, _) = BytesEncoderDecoder.decode(&self.buffer, offset);
         decoded
     }
 
@@ -83,7 +83,7 @@ impl Page {
             - self.starting_offsets.size_in_bytes()
             - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS;
 
-        let bytes_needed = EncoderDecoder::bytes_needed_for(buffer)
+        let bytes_needed = BytesEncoderDecoder.bytes_needed_for_encoding(buffer)
             + StartingOffsets::size_in_bytes_for_an_offset();
 
         bytes_available >= bytes_needed
