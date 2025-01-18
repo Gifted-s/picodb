@@ -82,8 +82,7 @@ mod tests {
         let number_of_bytes_for_encoding =
             EncoderDecoder::encode_bytes(&source[..], &mut destination, 10);
 
-        let (decoded, _) =
-            EncoderDecoder::decode_bytes(&destination[..], 10);
+        let (decoded, _) = EncoderDecoder::decode_bytes(&destination[..], 10);
 
         assert_eq!(&decoded[..], &source[..]);
     }
