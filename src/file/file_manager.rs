@@ -37,6 +37,18 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         })
     }
 
+    fn append_empty_block(&mut self, file_name: &str) -> Result<BlockId, io::Error> {
+        let block_id = BlockId::new(file_name, self.number_of_blocks(file_name)?);
+        let block_size = self.block_size;
+
+        self.seek_and_run(&block_id, |file| {
+            file.write_all(&vec![0; block_size])?;
+            file.sync_data()
+        })?;
+
+        Ok(block_id)
+    }
+
     fn number_of_blocks(&mut self, file_name: &str) -> Result<usize, io::Error> {
         let file = self.get_or_create(file_name)?;
         let metadata = file.metadata()?;
@@ -152,5 +164,44 @@ mod tests {
 
         let number_of_blocks = file_manager.number_of_blocks(file_name).unwrap();
         assert_eq!(1, number_of_blocks);
+    }
+
+    #[test]
+    fn append_empty_block() {
+        let file = NamedTempFile::new().expect("Failed to create temp file");
+        let directory_path = file.path().parent().unwrap();
+        let file_name = file.path().file_name().unwrap().to_str().unwrap();
+
+        let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        file_manager.append_empty_block(&file_name).unwrap();
+
+        let block_id = BlockId::new(file_name, 0);
+
+        let mut read_buffer = vec![0; BLOCK_SIZE];
+        file_manager.read_into(&block_id, &mut read_buffer).unwrap();
+
+        assert_eq!(vec![0; BLOCK_SIZE], read_buffer);
+    }
+
+    #[test]
+    fn append_a_couple_of_empty_blocks() {
+        let file = NamedTempFile::new().expect("Failed to create temp file");
+        let directory_path = file.path().parent().unwrap();
+        let file_name = file.path().file_name().unwrap().to_str().unwrap();
+
+        let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        file_manager.append_empty_block(&file_name).unwrap();
+
+        let mut buffer = vec![0; BLOCK_SIZE];
+        let content = b"PebbleDB is an LSM-based storage engine.";
+        let content_length = content.len();
+        buffer[..content_length].copy_from_slice(&content[..content_length]);
+
+        let block_id = BlockId::new(file_name, 0);
+        let result = file_manager.write(&block_id, &buffer);
+        assert!(result.is_ok());
+
+        let new_block_id = file_manager.append_empty_block(&file_name).unwrap();
+        assert_eq!(1, new_block_id.block_number);
     }
 }
