@@ -37,6 +37,12 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         })
     }
 
+    fn number_of_blocks(&mut self, file_name: &str) -> Result<usize, io::Error> {
+        let file = self.get_or_create(file_name)?;
+        let metadata = file.metadata()?;
+        Ok(metadata.len() as usize / self.block_size) //TODO: validate
+    }
+
     fn seek_and_run<Block: FnMut(&mut File) -> Result<(), io::Error>>(
         &mut self,
         block_id: &BlockId,
@@ -57,6 +63,7 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
                 .write(true)
                 .create(true)
                 .open(path)?;
+
             self.open_files.insert(path.to_string(), file);
         }
         Ok(self.open_files.get_mut(path).unwrap())
@@ -117,5 +124,33 @@ mod tests {
         file_manager.read_into(&block_id, &mut read_buffer).unwrap();
 
         assert_eq!(read_buffer, write_buffer);
+    }
+
+    #[test]
+    fn number_of_blocks_zero() {
+        let file = NamedTempFile::new().expect("Failed to create temp file");
+        let directory_path = file.path().parent().unwrap();
+        let file_name = file.path().file_name().unwrap().to_str().unwrap();
+
+        let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        let number_of_blocks = file_manager.number_of_blocks(file_name).unwrap();
+
+        assert_eq!(0, number_of_blocks);
+    }
+
+    #[test]
+    fn number_of_blocks_with_content_in_a_file() {
+        let file = NamedTempFile::new().expect("Failed to create temp file");
+        let directory_path = file.path().parent().unwrap();
+        let file_name = file.path().file_name().unwrap().to_str().unwrap();
+
+        let mut file_manager = FileManager::new(directory_path, 40).unwrap();
+        let write_buffer = b"PebbleDB is an LSM-based storage engine.";
+        let block_id = BlockId::new(file_name, 0);
+        let result = file_manager.write(&block_id, write_buffer);
+        assert!(result.is_ok());
+
+        let number_of_blocks = file_manager.number_of_blocks(file_name).unwrap();
+        assert_eq!(1, number_of_blocks);
     }
 }
