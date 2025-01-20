@@ -2,6 +2,7 @@ use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::{EncoderDecoder, EndOffset};
 use crate::file::starting_offsets::StartingOffsets;
 use byteorder::ByteOrder;
+use std::rc::Rc;
 
 const RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS: usize = size_of::<u16>();
 
@@ -11,13 +12,20 @@ struct Page {
     current_write_offset: usize,
 }
 
-struct BackwardRecordIterator<'p> {
-    page: &'p Page,
+struct BackwardRecordIterator {
+    page: Rc<Page>,
     current_offset_index: Option<usize>,
 }
 
-impl<'p> BackwardRecordIterator<'p> {
-    fn record(&mut self) -> Option<&'p [u8]> {
+impl BackwardRecordIterator {
+    fn new(page: Rc<Page>, current_offset_index: usize) -> Self {
+        Self {
+            page,
+            current_offset_index: Some(current_offset_index),
+        }
+    }
+
+    fn record(&mut self) -> Option<&[u8]> {
         self.current_offset_index.and_then(|offset_index| {
             self.page
                 .starting_offsets
@@ -98,14 +106,11 @@ impl Page {
         &self.buffer
     }
 
-    fn backward_iterator(&self) -> BackwardRecordIterator {
+    fn backward_iterator(self: Rc<Page>) -> BackwardRecordIterator {
         if self.starting_offsets.length() == 0 {
             panic!("empty log page")
         }
-        BackwardRecordIterator {
-            page: &self,
-            current_offset_index: Some(self.starting_offsets.length() - 1),
-        }
+        BackwardRecordIterator::new(self.clone(), self.starting_offsets.length() - 1)
     }
 
     fn has_capacity_for(&self, buffer: &[u8]) -> bool {
@@ -166,6 +171,7 @@ impl Page {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
     use crate::log::page::Page;
 
     #[test]
@@ -216,7 +222,7 @@ mod tests {
         page.add(b"RocksDB is an LSM-based key/value storage engine");
 
         let _ = page.finish();
-        let mut iterator = page.backward_iterator();
+        let mut iterator = Rc::new(page).backward_iterator();
         assert_eq!(
             b"RocksDB is an LSM-based key/value storage engine",
             iterator.record().unwrap()
@@ -230,7 +236,7 @@ mod tests {
         page.add(b"PebbleDB is an LSM-based key/value storage engine");
 
         let _ = page.finish();
-        let mut iterator = page.backward_iterator();
+        let mut iterator = Rc::new(page).backward_iterator();
 
         assert_eq!(
             b"PebbleDB is an LSM-based key/value storage engine",
@@ -253,7 +259,7 @@ mod tests {
             });
 
         let _ = page.finish();
-        let mut iterator = page.backward_iterator();
+        let mut iterator = Rc::new(page).backward_iterator();
 
         (1..=100).rev().for_each(|record_id| {
             let record = format!("Record {}", record_id);
@@ -277,7 +283,7 @@ mod tests {
         let decoded_page = Page::decode_from(buffer.to_vec());
 
         let _ = page.finish();
-        let mut iterator = decoded_page.backward_iterator();
+        let mut iterator = Rc::new(decoded_page).backward_iterator();
 
         assert_eq!(
             b"PebbleDB is an LSM-based key/value storage engine",
@@ -296,7 +302,7 @@ mod tests {
         let decoded_page = Page::decode_from(buffer.to_vec());
 
         let _ = page.finish();
-        let mut iterator = decoded_page.backward_iterator();
+        let mut iterator = Rc::new(decoded_page).backward_iterator();
 
         assert_eq!(
             b"RocksDB is an LSM-based key/value storage engine",
@@ -320,7 +326,7 @@ mod tests {
 
         let buffer = page.finish();
         let decoded_page = Page::decode_from(buffer.to_vec());
-        let mut iterator = decoded_page.backward_iterator();
+        let mut iterator = Rc::new(decoded_page).backward_iterator();
 
         (1..=50).rev().for_each(|record_id| {
             let record = format!("Record {}", record_id);
