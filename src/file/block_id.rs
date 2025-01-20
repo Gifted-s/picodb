@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub(crate) struct BlockId {
     file_name: String,
     pub(crate) block_number: usize,
@@ -20,7 +20,7 @@ impl BlockId {
         &self.file_name
     }
 
-    fn previous(&self) -> Option<Self> {
+    pub(crate) fn previous(&self) -> Option<Self> {
         if self.block_number == 0 {
             None
         } else {

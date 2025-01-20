@@ -7,12 +7,12 @@ use std::{fs, io};
 
 pub(crate) struct FileManager<PathType: AsRef<Path>> {
     directory: PathType,
-    block_size: usize,
+    pub(crate) block_size: usize,
     open_files: HashMap<String, File>,
 }
 
 impl<PathType: AsRef<Path>> FileManager<PathType> {
-    fn new(directory: PathType, block_size: usize) -> Result<Self, io::Error> {
+    pub(crate) fn new(directory: PathType, block_size: usize) -> Result<Self, io::Error> {
         let exists = fs::metadata(directory.as_ref()).is_ok();
         if !exists {
             fs::create_dir(directory.as_ref())?
@@ -24,20 +24,20 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         })
     }
 
-    fn read_into(&mut self, block_id: &BlockId, buffer: &mut [u8]) -> Result<(), io::Error> {
+    pub(crate) fn read_into(&mut self, block_id: &BlockId, buffer: &mut [u8]) -> Result<(), io::Error> {
         self.seek_and_run(block_id, |file| {
             file.read_exact(buffer).map(|_number_of_bytes_read| ())
         })
     }
 
-    fn write(&mut self, block_id: &BlockId, data: &[u8]) -> Result<(), io::Error> {
+    pub(crate) fn write(&mut self, block_id: &BlockId, data: &[u8]) -> Result<(), io::Error> {
         self.seek_and_run(block_id, |file| {
             file.write_all(data)?;
             file.sync_data()
         })
     }
 
-    fn append_empty_block(&mut self, file_name: &str) -> Result<BlockId, io::Error> {
+    pub(crate) fn append_empty_block(&mut self, file_name: &str) -> Result<BlockId, io::Error> {
         let block_id = BlockId::new(file_name, self.number_of_blocks(file_name)?);
         let block_size = self.block_size;
 
@@ -49,7 +49,7 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         Ok(block_id)
     }
 
-    fn number_of_blocks(&mut self, file_name: &str) -> Result<usize, io::Error> {
+    pub(crate) fn number_of_blocks(&mut self, file_name: &str) -> Result<usize, io::Error> {
         let file = self.get_or_create(file_name)?;
         let metadata = file.metadata()?;
         Ok(metadata.len() as usize / self.block_size) //TODO: validate

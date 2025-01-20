@@ -6,26 +6,27 @@ use std::rc::Rc;
 
 const RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS: usize = size_of::<u16>();
 
-struct Page {
+pub(crate) struct Page {
     buffer: Vec<u8>,
     starting_offsets: StartingOffsets,
     current_write_offset: usize,
 }
 
-struct BackwardRecordIterator {
+pub(crate) struct BackwardRecordIterator {
     page: Rc<Page>,
     current_offset_index: Option<usize>,
 }
 
 impl BackwardRecordIterator {
-    fn new(page: Rc<Page>, current_offset_index: usize) -> Self {
+    pub(crate) fn new(page: Rc<Page>) -> Self {
+        let current_offset_index = page.starting_offsets.length() - 1;
         Self {
             page,
             current_offset_index: Some(current_offset_index),
         }
     }
 
-    fn record(&mut self) -> Option<&[u8]> {
+    pub(crate) fn record(&mut self) -> Option<&[u8]> {
         self.current_offset_index.and_then(|offset_index| {
             self.page
                 .starting_offsets
@@ -40,7 +41,7 @@ impl BackwardRecordIterator {
 }
 
 impl Page {
-    fn new(block_size: usize) -> Self {
+    pub(crate) fn new(block_size: usize) -> Self {
         Page {
             buffer: vec![0; block_size],
             starting_offsets: StartingOffsets::new(),
@@ -48,7 +49,7 @@ impl Page {
         }
     }
 
-    fn decode_from(buffer: Vec<u8>) -> Self {
+    pub(crate) fn decode_from(buffer: Vec<u8>) -> Self {
         if buffer.is_empty() {
             panic!("buffer cannot be empty while decoding the log page");
         }
@@ -78,7 +79,7 @@ impl Page {
         }
     }
 
-    fn add(&mut self, data: &[u8]) -> bool {
+    pub(crate) fn add(&mut self, data: &[u8]) -> bool {
         if !self.has_capacity_for(data) {
             return false;
         }
@@ -92,12 +93,7 @@ impl Page {
         true
     }
 
-    fn bytes_at(&self, offset: usize) -> &[u8] {
-        let (decoded, _) = BytesEncoderDecoder.decode(&self.buffer, offset);
-        decoded
-    }
-
-    fn finish(&mut self) -> &[u8] {
+    pub(crate) fn finish(&mut self) -> &[u8] {
         if self.starting_offsets.length() == 0 {
             panic!("empty log page")
         }
@@ -110,7 +106,12 @@ impl Page {
         if self.starting_offsets.length() == 0 {
             panic!("empty log page")
         }
-        BackwardRecordIterator::new(self.clone(), self.starting_offsets.length() - 1)
+        BackwardRecordIterator::new(self.clone())
+    }
+
+    fn bytes_at(&self, offset: usize) -> &[u8] {
+        let (decoded, _) = BytesEncoderDecoder.decode(&self.buffer, offset);
+        decoded
     }
 
     fn has_capacity_for(&self, buffer: &[u8]) -> bool {
