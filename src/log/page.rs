@@ -171,8 +171,8 @@ impl Page {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
     use crate::log::page::Page;
+    use std::rc::Rc;
 
     #[test]
     fn attempt_to_add_a_record_to_a_page_with_insufficient_size() {
