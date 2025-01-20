@@ -90,9 +90,12 @@ mod tests {
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager = LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager =
+            LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
 
-        assert!(log_manager.append(b"RocksDB is an LSM-based storage engine").is_ok());
+        assert!(log_manager
+            .append(b"RocksDB is an LSM-based storage engine")
+            .is_ok());
     }
 
     #[test]
@@ -102,9 +105,12 @@ mod tests {
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager = LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager =
+            LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
 
-        assert!(log_manager.append(b"RocksDB is an LSM-based storage engine").is_ok());
+        assert!(log_manager
+            .append(b"RocksDB is an LSM-based storage engine")
+            .is_ok());
 
         let mut iterator = log_manager.backward_iterator().unwrap();
         assert_eq!(
@@ -121,11 +127,18 @@ mod tests {
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager = LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager =
+            LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
 
-        assert!(log_manager.append(b"RocksDB is an LSM-based storage engine").is_ok());
-        assert!(log_manager.append(b"PebbleDB is an LSM-based storage engine").is_ok());
-        assert!(log_manager.append(b"BoltDB is a B+Tree storage engine").is_ok());
+        assert!(log_manager
+            .append(b"RocksDB is an LSM-based storage engine")
+            .is_ok());
+        assert!(log_manager
+            .append(b"PebbleDB is an LSM-based storage engine")
+            .is_ok());
+        assert!(log_manager
+            .append(b"BoltDB is a B+Tree storage engine")
+            .is_ok());
 
         let mut iterator = log_manager.backward_iterator().unwrap();
         assert_eq!(
@@ -151,11 +164,18 @@ mod tests {
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE_IN_BYTES).unwrap();
-        let mut log_manager = LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager =
+            LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
 
-        assert!(log_manager.append(b"RocksDB is an LSM-based storage engine").is_ok());
-        assert!(log_manager.append(b"PebbleDB is an LSM-based storage engine").is_ok());
-        assert!(log_manager.append(b"BoltDB is a B+Tree storage engine").is_ok());
+        assert!(log_manager
+            .append(b"RocksDB is an LSM-based storage engine")
+            .is_ok());
+        assert!(log_manager
+            .append(b"PebbleDB is an LSM-based storage engine")
+            .is_ok());
+        assert!(log_manager
+            .append(b"BoltDB is a B+Tree storage engine")
+            .is_ok());
 
         let mut iterator = log_manager.backward_iterator().unwrap();
         assert_eq!(
@@ -179,16 +199,24 @@ mod tests {
         let directory_path = file.path().parent().unwrap();
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
         let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager = LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager =
+            LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
 
-        assert!(log_manager.append(b"RocksDB is an LSM-based storage engine").is_ok());
-        assert!(log_manager.append(b"PebbleDB is an LSM-based storage engine").is_ok());
+        assert!(log_manager
+            .append(b"RocksDB is an LSM-based storage engine")
+            .is_ok());
+        assert!(log_manager
+            .append(b"PebbleDB is an LSM-based storage engine")
+            .is_ok());
         assert!(log_manager.force_flush().is_ok());
 
         drop(log_manager);
 
-        let mut reloaded_log_manager = LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
-        assert!(reloaded_log_manager.append(b"BoltDB is a B+Tree storage engine").is_ok());
+        let mut reloaded_log_manager =
+            LogManager::new(&mut file_manager, log_file_name.to_string()).unwrap();
+        assert!(reloaded_log_manager
+            .append(b"BoltDB is a B+Tree storage engine")
+            .is_ok());
 
         let mut iterator = reloaded_log_manager.backward_iterator().unwrap();
         assert_eq!(

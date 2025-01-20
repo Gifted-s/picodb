@@ -24,7 +24,11 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         })
     }
 
-    pub(crate) fn read_into(&mut self, block_id: &BlockId, buffer: &mut [u8]) -> Result<(), io::Error> {
+    pub(crate) fn read_into(
+        &mut self,
+        block_id: &BlockId,
+        buffer: &mut [u8],
+    ) -> Result<(), io::Error> {
         self.seek_and_run(block_id, |file| {
             file.read_exact(buffer).map(|_number_of_bytes_read| ())
         })
