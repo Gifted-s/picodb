@@ -1,0 +1,5 @@
+- go through the entire code
+- all tests
+- finish log/ package
+    - log_manager
+    - log_iterator

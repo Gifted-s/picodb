@@ -1,7 +1,7 @@
 pub(crate) mod bytes_encoder_decoder;
 
 type BytesNeededForEncoding = usize;
-type EndOffset = usize;
+pub(crate) type EndOffset = usize;
 
 pub(crate) trait EncoderDecoder<T: ?Sized> {
     fn bytes_needed_for_encoding(&self, source: &T) -> BytesNeededForEncoding;

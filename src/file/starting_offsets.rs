@@ -11,7 +11,7 @@ impl StartingOffsets {
         Self { offsets: vec![] }
     }
 
-    fn decode_from(buffer: &[u8]) -> Self {
+    pub(crate) fn decode_from(buffer: &[u8]) -> Self {
         let mut starting_offsets = Self::new();
         buffer
             .chunks_exact(SIZE_OF_OFFSET)
@@ -29,6 +29,10 @@ impl StartingOffsets {
         self.offsets.get(index)
     }
 
+    pub(crate) fn last_offset(&self) -> Option<&u32> {
+        self.offsets.last()
+    }
+
     pub(crate) fn encode(&self) -> Vec<u8> {
         let mut encoded_offsets = Vec::with_capacity(self.offsets.len() * SIZE_OF_OFFSET);
         for &offset in &self.offsets {
@@ -43,6 +47,10 @@ impl StartingOffsets {
 
     pub(crate) fn size_in_bytes_for_an_offset() -> usize {
         SIZE_OF_OFFSET
+    }
+
+    pub(crate) fn size_in_bytes_for(number_of_offsets: usize) -> usize {
+        SIZE_OF_OFFSET * number_of_offsets
     }
 
     pub(crate) fn length(&self) -> usize {

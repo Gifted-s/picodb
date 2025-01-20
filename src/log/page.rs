@@ -1,5 +1,5 @@
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
-use crate::encodex::EncoderDecoder;
+use crate::encodex::{EncoderDecoder, EndOffset};
 use crate::file::starting_offsets::StartingOffsets;
 use byteorder::ByteOrder;
 
@@ -37,6 +37,36 @@ impl Page {
             buffer: vec![0; block_size],
             starting_offsets: StartingOffsets::new(),
             current_write_offset: 0,
+        }
+    }
+
+    fn decode_from(buffer: Vec<u8>) -> Self {
+        if buffer.is_empty() {
+            panic!("buffer cannot be empty while decoding the log page");
+        }
+
+        let offset_containing_number_of_offsets =
+            buffer.len() - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS;
+        let number_of_offsets =
+            byteorder::LittleEndian::read_u16(&buffer[offset_containing_number_of_offsets..])
+                as usize;
+
+        match number_of_offsets {
+            0 => Page {
+                buffer,
+                starting_offsets: StartingOffsets::new(),
+                current_write_offset: 0,
+            },
+            _ => {
+                let starting_offsets = Self::decode_starting_offsets(&buffer, &number_of_offsets);
+                let end_offset = Self::current_write_offset(&buffer, &starting_offsets);
+
+                Page {
+                    buffer,
+                    starting_offsets,
+                    current_write_offset: end_offset,
+                }
+            }
         }
     }
 
@@ -113,6 +143,24 @@ impl Page {
             &mut encoded_page[encoded_page_length - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS..],
             self.starting_offsets.length() as u16,
         );
+    }
+
+    fn decode_starting_offsets(buffer: &Vec<u8>, number_of_offsets: &usize) -> StartingOffsets {
+        let offset_containing_encoded_starting_offsets = buffer.len()
+            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
+            - StartingOffsets::size_in_bytes_for(*number_of_offsets);
+
+        StartingOffsets::decode_from(
+            &buffer[offset_containing_encoded_starting_offsets
+                ..offset_containing_encoded_starting_offsets
+                    + StartingOffsets::size_in_bytes_for(*number_of_offsets)],
+        )
+    }
+
+    fn current_write_offset(buffer: &Vec<u8>, starting_offsets: &StartingOffsets) -> EndOffset {
+        let last_starting_offset = starting_offsets.last_offset().unwrap();
+        let (_, end_offset) = BytesEncoderDecoder.decode(&buffer, *last_starting_offset as usize);
+        end_offset
     }
 }
 
@@ -208,6 +256,73 @@ mod tests {
         let mut iterator = page.backward_iterator();
 
         (1..=100).rev().for_each(|record_id| {
+            let record = format!("Record {}", record_id);
+            assert_eq!(record.as_bytes(), iterator.record().unwrap());
+        });
+        assert_eq!(None, iterator.record());
+    }
+
+    #[test]
+    #[should_panic]
+    fn attempt_to_decode_page_with_zero_records() {
+        Page::decode_from(vec![]);
+    }
+
+    #[test]
+    fn decode_page_with_a_single_record() {
+        let mut page = Page::new(4096);
+        page.add(b"PebbleDB is an LSM-based key/value storage engine");
+
+        let buffer = page.finish();
+        let decoded_page = Page::decode_from(buffer.to_vec());
+
+        let _ = page.finish();
+        let mut iterator = decoded_page.backward_iterator();
+
+        assert_eq!(
+            b"PebbleDB is an LSM-based key/value storage engine",
+            iterator.record().unwrap()
+        );
+        assert_eq!(None, iterator.record());
+    }
+
+    #[test]
+    fn decode_page_with_a_couple_of_records() {
+        let mut page = Page::new(4096);
+        page.add(b"PebbleDB is an LSM-based key/value storage engine");
+        page.add(b"RocksDB is an LSM-based key/value storage engine");
+
+        let buffer = page.finish();
+        let decoded_page = Page::decode_from(buffer.to_vec());
+
+        let _ = page.finish();
+        let mut iterator = decoded_page.backward_iterator();
+
+        assert_eq!(
+            b"RocksDB is an LSM-based key/value storage engine",
+            iterator.record().unwrap()
+        );
+        assert_eq!(
+            b"PebbleDB is an LSM-based key/value storage engine",
+            iterator.record().unwrap()
+        );
+        assert_eq!(None, iterator.record());
+    }
+
+    #[test]
+    fn decode_page_with_a_few_records() {
+        let mut page = Page::new(4096);
+        (1..=50)
+            .map(|record_id| format!("Record {}", record_id))
+            .for_each(|record| {
+                page.add(record.as_bytes());
+            });
+
+        let buffer = page.finish();
+        let decoded_page = Page::decode_from(buffer.to_vec());
+        let mut iterator = decoded_page.backward_iterator();
+
+        (1..=50).rev().for_each(|record_id| {
             let record = format!("Record {}", record_id);
             assert_eq!(record.as_bytes(), iterator.record().unwrap());
         });
