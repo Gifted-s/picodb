@@ -55,30 +55,7 @@ impl Page {
         if buffer.is_empty() {
             panic!("buffer cannot be empty while decoding the log page");
         }
-
-        let offset_containing_number_of_offsets =
-            buffer.len() - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS;
-        let number_of_offsets =
-            byteorder::LittleEndian::read_u16(&buffer[offset_containing_number_of_offsets..])
-                as usize;
-
-        match number_of_offsets {
-            0 => Page {
-                buffer,
-                starting_offsets: StartingOffsets::new(),
-                current_write_offset: 0,
-            },
-            _ => {
-                let starting_offsets = Self::decode_starting_offsets(&buffer, &number_of_offsets);
-                let end_offset = Self::current_write_offset(&buffer, &starting_offsets);
-
-                Page {
-                    buffer,
-                    starting_offsets,
-                    current_write_offset: end_offset,
-                }
-            }
-        }
+        PageDecoder::decode_page(buffer)
     }
 
     pub(crate) fn add(&mut self, data: &[u8]) -> bool {
@@ -99,8 +76,11 @@ impl Page {
         if self.starting_offsets.length() == 0 {
             panic!("empty log page")
         }
-        self.write_encoded_starting_offsets(&self.encode_starting_offsets());
-        self.write_number_of_starting_offsets();
+        let mut page_encoder = PageEncoder {
+            buffer: &mut self.buffer,
+            starting_offsets: &self.starting_offsets,
+        };
+        page_encoder.encode();
         &self.buffer
     }
 
@@ -130,9 +110,19 @@ impl Page {
 
         bytes_available >= bytes_needed
     }
+}
 
-    fn encode_starting_offsets(&self) -> Vec<u8> {
-        self.starting_offsets.encode()
+struct PageEncoder<'a> {
+    buffer: &'a mut [u8],
+    starting_offsets: &'a StartingOffsets,
+}
+
+struct PageDecoder;
+
+impl<'a> PageEncoder<'a> {
+    fn encode(&mut self)  {
+        self.write_encoded_starting_offsets(&self.starting_offsets.encode());
+        self.write_number_of_starting_offsets();
     }
 
     fn write_encoded_starting_offsets(&mut self, encoded_starting_offsets: &[u8]) {
@@ -155,8 +145,28 @@ impl Page {
             self.starting_offsets.length() as u16,
         );
     }
+}
 
-    fn decode_starting_offsets(buffer: &Vec<u8>, number_of_offsets: &usize) -> StartingOffsets {
+impl PageDecoder {
+    pub(crate) fn decode_page(buffer: Vec<u8>) -> Page {
+        let offset_containing_number_of_offsets =
+            buffer.len() - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS;
+
+        let number_of_offsets =
+            byteorder::LittleEndian::read_u16(&buffer[offset_containing_number_of_offsets..])
+                as usize;
+
+        let starting_offsets = Self::decode_starting_offsets(&buffer, &number_of_offsets);
+        let end_offset = Self::current_write_offset(&buffer, &starting_offsets);
+
+        Page {
+            buffer,
+            starting_offsets,
+            current_write_offset: end_offset,
+        }
+    }
+
+    fn decode_starting_offsets(buffer: &[u8], number_of_offsets: &usize) -> StartingOffsets {
         let offset_containing_encoded_starting_offsets = buffer.len()
             - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
             - StartingOffsets::size_in_bytes_for(*number_of_offsets);
@@ -164,11 +174,11 @@ impl Page {
         StartingOffsets::decode_from(
             &buffer[offset_containing_encoded_starting_offsets
                 ..offset_containing_encoded_starting_offsets
-                    + StartingOffsets::size_in_bytes_for(*number_of_offsets)],
+                + StartingOffsets::size_in_bytes_for(*number_of_offsets)],
         )
     }
 
-    fn current_write_offset(buffer: &Vec<u8>, starting_offsets: &StartingOffsets) -> EndOffset {
+    fn current_write_offset(buffer: &[u8], starting_offsets: &StartingOffsets) -> EndOffset {
         let last_starting_offset = starting_offsets.last_offset().unwrap();
         let (_, end_offset) = BytesEncoderDecoder.decode(&buffer, *last_starting_offset as usize);
         end_offset
