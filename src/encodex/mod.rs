@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 
 pub(crate) mod bytes_encoder_decoder;
+mod string_encoder_decoder;
 mod u16_encoder_decoder;
 mod u8_encoder_decoder;
-mod string_encoder_decoder;
 
 type BytesNeededForEncoding = usize;
 pub(crate) type EndOffset = usize;
