@@ -13,6 +13,7 @@ pub(crate) struct Page {
 }
 
 pub(crate) struct BackwardRecordIterator {
+    //TODO: revisit, maybe a reference, or an Arc
     page: Rc<Page>,
     current_offset_index: Option<usize>,
 }
