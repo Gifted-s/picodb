@@ -120,7 +120,7 @@ struct PageEncoder<'a> {
 struct PageDecoder;
 
 impl<'a> PageEncoder<'a> {
-    fn encode(&mut self)  {
+    fn encode(&mut self) {
         self.write_encoded_starting_offsets(&self.starting_offsets.encode());
         self.write_number_of_starting_offsets();
     }
@@ -174,7 +174,7 @@ impl PageDecoder {
         StartingOffsets::decode_from(
             &buffer[offset_containing_encoded_starting_offsets
                 ..offset_containing_encoded_starting_offsets
-                + StartingOffsets::size_in_bytes_for(*number_of_offsets)],
+                    + StartingOffsets::size_in_bytes_for(*number_of_offsets)],
         )
     }
 
