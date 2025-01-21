@@ -1,3 +1,4 @@
+use crate::buffer::page_encoder::PageEncoder;
 use crate::buffer::supported_types::{SupportedType, Types};
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
@@ -144,42 +145,14 @@ impl Page {
         if self.starting_offsets.length() == 0 {
             panic!("empty page")
         }
-        self.write_encoded_starting_offsets(&self.starting_offsets.encode());
-        self.write_types(&self.types.encode());
-        self.write_number_of_starting_offsets();
+
+        let mut encoder = PageEncoder {
+            buffer: &mut self.buffer,
+            starting_offsets: &self.starting_offsets,
+            types: &self.types,
+        };
+        encoder.encode();
         &self.buffer
-    }
-
-    fn write_encoded_starting_offsets(&mut self, encoded_starting_offsets: &[u8]) {
-        let encoded_page = &mut self.buffer;
-        let offset_to_write_encoded_starting_offsets = encoded_page.len()
-            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
-            - self.starting_offsets.size_in_bytes();
-
-        encoded_page[offset_to_write_encoded_starting_offsets
-            ..offset_to_write_encoded_starting_offsets + encoded_starting_offsets.len()]
-            .copy_from_slice(encoded_starting_offsets);
-    }
-
-    fn write_types(&mut self, encoded_types: &[u8]) {
-        let encoded_page = &mut self.buffer;
-        let offset_to_write_types = encoded_page.len()
-            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
-            - self.starting_offsets.size_in_bytes()
-            - self.types.size_in_bytes();
-
-        encoded_page[offset_to_write_types..offset_to_write_types + encoded_types.len()]
-            .copy_from_slice(encoded_types);
-    }
-
-    fn write_number_of_starting_offsets(&mut self) {
-        let encoded_page = &mut self.buffer;
-        let encoded_page_length = encoded_page.len();
-
-        byteorder::LittleEndian::write_u16(
-            &mut encoded_page[encoded_page_length - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS..],
-            self.starting_offsets.length() as u16,
-        );
     }
 
     fn decode_starting_offsets(buffer: &[u8], number_of_offsets: usize) -> StartingOffsets {
