@@ -1,5 +1,5 @@
-use std::borrow::Cow;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder, EndOffset};
+use std::borrow::Cow;
 
 pub struct U8EncoderDecoder;
 
@@ -23,7 +23,10 @@ impl EncoderDecoder<u8> for U8EncoderDecoder {
     }
 
     fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (Cow<'a, u8>, EndOffset) {
-        (Cow::Owned(encoded[from_offset]), from_offset + Self::U8_SIZE)
+        (
+            Cow::Owned(encoded[from_offset]),
+            from_offset + Self::U8_SIZE,
+        )
     }
 }
 
