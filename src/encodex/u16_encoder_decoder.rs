@@ -2,7 +2,7 @@ use crate::encodex::{BytesNeededForEncoding, EncoderDecoder, EndOffset};
 use byteorder::ByteOrder;
 use std::borrow::Cow;
 
-pub struct U16EncoderDecoder;
+pub(crate) struct U16EncoderDecoder;
 
 impl U16EncoderDecoder {
     const U16_SIZE: usize = size_of::<u16>();

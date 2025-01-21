@@ -1,12 +1,12 @@
 const RESERVED_SIZE_FOR_TYPE: usize = size_of::<u8>();
 
-struct Types {
+pub(crate) struct Types {
     supported_types: Vec<SupportedType>,
 }
 
 #[non_exhaustive]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum SupportedType {
+pub(crate) enum SupportedType {
     TypeU8,
     TypeU16,
     TypeBytes,
@@ -37,7 +37,7 @@ impl Into<u8> for SupportedType {
 }
 
 impl Types {
-    fn new() -> Types {
+    pub(crate) fn new() -> Types {
         Types {
             supported_types: vec![],
         }
@@ -51,7 +51,7 @@ impl Types {
         types
     }
 
-    fn add(&mut self, supported_type: SupportedType) {
+    pub(crate) fn add(&mut self, supported_type: SupportedType) {
         self.supported_types.push(supported_type);
     }
 
@@ -63,7 +63,7 @@ impl Types {
         buffer
     }
 
-    fn type_at(&self, index: usize) -> Option<&SupportedType> {
+    pub(crate) fn type_at(&self, index: usize) -> Option<&SupportedType> {
         self.supported_types.get(index)
     }
 

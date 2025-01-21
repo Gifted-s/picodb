@@ -1,7 +1,7 @@
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder, EndOffset};
 use std::borrow::Cow;
 
-pub struct U8EncoderDecoder;
+pub(crate) struct U8EncoderDecoder;
 
 impl U8EncoderDecoder {
     const U8_SIZE: usize = size_of::<u8>();

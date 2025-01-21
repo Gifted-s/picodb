@@ -2,7 +2,7 @@ use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder, EndOffset};
 use std::borrow::Cow;
 
-pub struct StringEncoderDecoder;
+pub(crate) struct StringEncoderDecoder;
 
 impl EncoderDecoder<String> for StringEncoderDecoder {
     fn bytes_needed_for_encoding(&self, source: &String) -> BytesNeededForEncoding {
