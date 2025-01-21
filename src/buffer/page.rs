@@ -125,8 +125,8 @@ impl Page {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Cow;
     use crate::buffer::page::Page;
+    use std::borrow::Cow;
 
     const BLOCK_SIZE: usize = 4096;
 
@@ -156,7 +156,9 @@ mod tests {
 
         assert_eq!(Some(250), page.get_u8(0));
         assert_eq!(
-            Some(Cow::Owned(String::from("PebbleDB is an LSM-based storage engine"))),
+            Some(Cow::Owned(String::from(
+                "PebbleDB is an LSM-based storage engine"
+            ))),
             page.get_string(1)
         );
     }

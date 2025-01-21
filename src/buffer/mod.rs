@@ -1,2 +1,2 @@
-mod supported_types;
 mod page;
+mod supported_types;
