@@ -28,7 +28,7 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
             _ => {
                 let block_id = BlockId::new(&log_file_name, number_of_blocks - 1);
                 let mut buffer = vec![0; file_manager.block_size];
-                file_manager.read_into(&block_id, &mut buffer)?;
+                file_manager.read_into(&mut buffer, &block_id)?;
                 (block_id, Page::decode_from(buffer))
             }
         };

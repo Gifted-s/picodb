@@ -26,8 +26,8 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
 
     pub(crate) fn read_into(
         &mut self,
-        block_id: &BlockId,
         buffer: &mut [u8],
+        block_id: &BlockId,
     ) -> Result<(), io::Error> {
         self.seek_and_run(block_id, |file| {
             file.read_exact(buffer).map(|_number_of_bytes_read| ())
@@ -119,7 +119,7 @@ mod tests {
         assert!(result.is_ok());
 
         let mut read_buffer = vec![0; write_buffer.len()];
-        file_manager.read_into(&block_id, &mut read_buffer).unwrap();
+        file_manager.read_into(&mut read_buffer, &block_id).unwrap();
 
         assert_eq!(read_buffer, write_buffer);
     }
@@ -137,7 +137,7 @@ mod tests {
         assert!(result.is_ok());
 
         let mut read_buffer = vec![0; write_buffer.len()];
-        file_manager.read_into(&block_id, &mut read_buffer).unwrap();
+        file_manager.read_into(&mut read_buffer, &block_id).unwrap();
 
         assert_eq!(read_buffer, write_buffer);
     }
@@ -182,7 +182,7 @@ mod tests {
         let block_id = BlockId::new(file_name, 0);
 
         let mut read_buffer = vec![0; BLOCK_SIZE];
-        file_manager.read_into(&block_id, &mut read_buffer).unwrap();
+        file_manager.read_into(&mut read_buffer, &block_id).unwrap();
 
         assert_eq!(vec![0; BLOCK_SIZE], read_buffer);
     }

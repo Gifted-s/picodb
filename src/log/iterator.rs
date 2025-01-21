@@ -17,7 +17,7 @@ impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
         current_block_id: BlockId,
     ) -> Result<BackwardLogIterator<'a, PathType>, io::Error> {
         let mut buffer = vec![0; file_manager.block_size];
-        file_manager.read_into(&current_block_id, &mut buffer)?;
+        file_manager.read_into(&mut buffer, &current_block_id)?;
 
         Ok(BackwardLogIterator {
             file_manager,
@@ -35,7 +35,7 @@ impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
             self.current_block_id = self.current_block_id.previous().unwrap();
             let mut buffer = vec![0; self.file_manager.block_size];
             self.file_manager
-                .read_into(&self.current_block_id, &mut buffer)
+                .read_into(&mut buffer, &self.current_block_id)
                 .unwrap();
 
             self.record_iterator = BackwardRecordIterator::new(Rc::new(Page::decode_from(buffer)));
