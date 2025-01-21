@@ -1,4 +1,4 @@
-use crate::buffer::page_encoder::{PageDecoder, PageEncoder};
+use crate::buffer::page_encoder_decoder::{PageDecoder, PageEncoder};
 use crate::buffer::supported_types::{SupportedType, Types};
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
@@ -8,8 +8,6 @@ use crate::encodex::{BytesNeededForEncoding, EncoderDecoder};
 use crate::file::starting_offsets::StartingOffsets;
 use byteorder::ByteOrder;
 use std::borrow::Cow;
-
-const RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS: usize = size_of::<u16>();
 
 pub(crate) struct Page {
     pub(crate) buffer: Vec<u8>,
