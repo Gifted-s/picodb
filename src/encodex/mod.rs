@@ -1,4 +1,5 @@
 pub(crate) mod bytes_encoder_decoder;
+mod u8_encoder_decoder;
 
 type BytesNeededForEncoding = usize;
 pub(crate) type EndOffset = usize;
