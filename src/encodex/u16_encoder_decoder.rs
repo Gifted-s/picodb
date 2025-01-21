@@ -43,7 +43,10 @@ mod tests {
     fn numer_of_bytes_needed_for_encoding_u16() {
         let source: u16 = 10;
 
-        assert_eq!(U16EncoderDecoder::U16_SIZE, U16EncoderDecoder.bytes_needed_for_encoding(&source));
+        assert_eq!(
+            U16EncoderDecoder::U16_SIZE,
+            U16EncoderDecoder.bytes_needed_for_encoding(&source)
+        );
     }
 
     #[test]
