@@ -1,3 +1,9 @@
+use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
+use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
+use crate::encodex::u16_encoder_decoder::U16EncoderDecoder;
+use crate::encodex::u8_encoder_decoder::U8EncoderDecoder;
+use crate::encodex::{EncoderDecoder, EndOffset};
+
 const RESERVED_SIZE_FOR_TYPE: usize = size_of::<u8>();
 
 pub(crate) struct Types {
@@ -36,6 +42,17 @@ impl Into<u8> for SupportedType {
     }
 }
 
+impl SupportedType {
+    pub(crate) fn end_offset_post_decode(&self, buffer: &[u8], from_offset: usize) -> EndOffset {
+        match self {
+            SupportedType::TypeU8 => U8EncoderDecoder.decode(buffer, from_offset).1,
+            SupportedType::TypeU16 => U16EncoderDecoder.decode(buffer, from_offset).1,
+            SupportedType::TypeBytes => BytesEncoderDecoder.decode(buffer, from_offset).1,
+            SupportedType::TypeString => StringEncoderDecoder.decode(buffer, from_offset).1,
+        }
+    }
+}
+
 impl Types {
     pub(crate) fn new() -> Types {
         Types {
@@ -43,7 +60,7 @@ impl Types {
         }
     }
 
-    fn decode_from(bytes: &[u8]) -> Types {
+    pub(crate) fn decode_from(bytes: &[u8]) -> Types {
         let mut types = Types::new();
         for description in bytes {
             types.add(SupportedType::from(*description));
@@ -55,7 +72,7 @@ impl Types {
         self.supported_types.push(supported_type);
     }
 
-    fn encode(&self) -> Vec<u8> {
+    pub(crate) fn encode(&self) -> Vec<u8> {
         let mut buffer = vec![0u8; self.supported_types.len() * RESERVED_SIZE_FOR_TYPE];
         for (offset_index, &supported_type) in self.supported_types.iter().enumerate() {
             buffer[offset_index * RESERVED_SIZE_FOR_TYPE] = supported_type.into();
@@ -65,6 +82,18 @@ impl Types {
 
     pub(crate) fn type_at(&self, index: usize) -> Option<&SupportedType> {
         self.supported_types.get(index)
+    }
+
+    pub(crate) fn last(&self) -> Option<&SupportedType> {
+        self.supported_types.last()
+    }
+
+    pub(crate) fn size_in_bytes(&self) -> usize {
+        self.length() * RESERVED_SIZE_FOR_TYPE
+    }
+
+    pub(crate) fn size_in_bytes_for(number_of_types: usize) -> usize {
+        RESERVED_SIZE_FOR_TYPE * number_of_types
     }
 
     fn length(&self) -> usize {

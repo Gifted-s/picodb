@@ -5,7 +5,10 @@ use crate::encodex::u16_encoder_decoder::U16EncoderDecoder;
 use crate::encodex::u8_encoder_decoder::U8EncoderDecoder;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder};
 use crate::file::starting_offsets::StartingOffsets;
+use byteorder::ByteOrder;
 use std::borrow::Cow;
+
+const RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS: usize = size_of::<u16>();
 
 struct Page {
     buffer: Vec<u8>,
@@ -21,6 +24,41 @@ impl Page {
             starting_offsets: StartingOffsets::new(),
             types: Types::new(),
             current_write_offset: 0,
+        }
+    }
+
+    fn decode_from(buffer: Vec<u8>) -> Self {
+        if buffer.is_empty() {
+            panic!("buffer cannot be empty while decoding the page");
+        }
+
+        let offset_containing_number_of_offsets =
+            buffer.len() - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS;
+        let number_of_offsets =
+            byteorder::LittleEndian::read_u16(&buffer[offset_containing_number_of_offsets..])
+                as usize;
+
+        match number_of_offsets {
+            0 => Page {
+                buffer,
+                starting_offsets: StartingOffsets::new(),
+                types: Types::new(),
+                current_write_offset: 0,
+            },
+            _ => {
+                let starting_offsets = Self::decode_starting_offsets(&buffer, number_of_offsets);
+                let types = Self::decode_types(&buffer, number_of_offsets);
+                let end_offset = types.last().unwrap().end_offset_post_decode(
+                    &buffer,
+                    *(starting_offsets.last_offset().unwrap()) as usize,
+                );
+                Page {
+                    buffer,
+                    starting_offsets,
+                    types,
+                    current_write_offset: end_offset,
+                }
+            }
         }
     }
 
@@ -102,6 +140,73 @@ impl Page {
         )
     }
 
+    fn finish(&mut self) -> &[u8] {
+        if self.starting_offsets.length() == 0 {
+            panic!("empty page")
+        }
+        self.write_encoded_starting_offsets(&self.starting_offsets.encode());
+        self.write_types(&self.types.encode());
+        self.write_number_of_starting_offsets();
+        &self.buffer
+    }
+
+    fn write_encoded_starting_offsets(&mut self, encoded_starting_offsets: &[u8]) {
+        let encoded_page = &mut self.buffer;
+        let offset_to_write_encoded_starting_offsets = encoded_page.len()
+            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
+            - self.starting_offsets.size_in_bytes();
+
+        encoded_page[offset_to_write_encoded_starting_offsets
+            ..offset_to_write_encoded_starting_offsets + encoded_starting_offsets.len()]
+            .copy_from_slice(encoded_starting_offsets);
+    }
+
+    fn write_types(&mut self, encoded_types: &[u8]) {
+        let encoded_page = &mut self.buffer;
+        let offset_to_write_types = encoded_page.len()
+            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
+            - self.starting_offsets.size_in_bytes()
+            - self.types.size_in_bytes();
+
+        encoded_page[offset_to_write_types..offset_to_write_types + encoded_types.len()]
+            .copy_from_slice(encoded_types);
+    }
+
+    fn write_number_of_starting_offsets(&mut self) {
+        let encoded_page = &mut self.buffer;
+        let encoded_page_length = encoded_page.len();
+
+        byteorder::LittleEndian::write_u16(
+            &mut encoded_page[encoded_page_length - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS..],
+            self.starting_offsets.length() as u16,
+        );
+    }
+
+    fn decode_starting_offsets(buffer: &[u8], number_of_offsets: usize) -> StartingOffsets {
+        let offset_containing_encoded_starting_offsets = buffer.len()
+            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
+            - StartingOffsets::size_in_bytes_for(number_of_offsets);
+
+        StartingOffsets::decode_from(
+            &buffer[offset_containing_encoded_starting_offsets
+                ..offset_containing_encoded_starting_offsets
+                    + StartingOffsets::size_in_bytes_for(number_of_offsets)],
+        )
+    }
+
+    fn decode_types(buffer: &[u8], number_of_offsets: usize) -> Types {
+        let number_of_types = number_of_offsets;
+        let offset_containing_types = buffer.len()
+            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
+            - StartingOffsets::size_in_bytes_for(number_of_offsets)
+            - Types::size_in_bytes_for(number_of_types);
+
+        Types::decode_from(
+            &buffer[offset_containing_types
+                ..offset_containing_types + Types::size_in_bytes_for(number_of_types)],
+        )
+    }
+
     fn assert_field_type(&self, index: usize, expected: SupportedType) {
         assert_eq!(Some(&expected), self.types.type_at(index))
     }
@@ -170,5 +275,43 @@ mod tests {
             )),
             page.get_bytes(2)
         );
+    }
+
+    #[test]
+    fn decode_a_page_with_single_field() {
+        let mut page = Page::new(BLOCK_SIZE);
+        page.add_u8(250);
+
+        let encoded = page.finish();
+        let decoded = Page::decode_from(encoded.to_vec());
+
+        assert_eq!(Some(250), decoded.get_u8(0));
+    }
+
+    #[test]
+    fn decode_a_page_with_few_fields() {
+        let mut page = Page::new(BLOCK_SIZE);
+        page.add_u8(250);
+        page.add_string(String::from("PebbleDB is an LSM-based storage engine"));
+        page.add_bytes(b"RocksDB is an LSM-based storage engine".to_vec());
+        page.add_u16(500);
+
+        let encoded = page.finish();
+        let decoded = Page::decode_from(encoded.to_vec());
+
+        assert_eq!(Some(250), decoded.get_u8(0));
+        assert_eq!(
+            Some(Cow::Owned(String::from(
+                "PebbleDB is an LSM-based storage engine"
+            ))),
+            decoded.get_string(1)
+        );
+        assert_eq!(
+            Some(Cow::Owned(
+                b"RocksDB is an LSM-based storage engine".to_vec()
+            )),
+            decoded.get_bytes(2)
+        );
+        assert_eq!(Some(500), decoded.get_u16(3));
     }
 }
