@@ -62,48 +62,52 @@ impl Page {
 
     fn get_u8(&self, index: usize) -> Option<u8> {
         self.assert_field_type(index, SupportedType::TypeU8);
-        self.starting_offsets
-            .offset_at(index)
-            .map(|starting_offset| {
+        self.get(
+            |buffer, starting_offset| {
                 U8EncoderDecoder
-                    .decode(&self.buffer, *starting_offset as usize)
+                    .decode(&self.buffer, starting_offset as usize)
                     .0
                     .into_owned()
-            })
+            },
+            index,
+        )
     }
 
     fn get_u16(&self, index: usize) -> Option<u16> {
         self.assert_field_type(index, SupportedType::TypeU16);
-        self.starting_offsets
-            .offset_at(index)
-            .map(|starting_offset| {
+        self.get(
+            |buffer, starting_offset| {
                 U16EncoderDecoder
-                    .decode(&self.buffer, *starting_offset as usize)
+                    .decode(&self.buffer, starting_offset as usize)
                     .0
                     .into_owned()
-            })
+            },
+            index,
+        )
     }
 
     fn get_bytes(&self, index: usize) -> Option<Cow<[u8]>> {
         self.assert_field_type(index, SupportedType::TypeBytes);
-        self.starting_offsets
-            .offset_at(index)
-            .map(|starting_offset| {
+        self.get(
+            |buffer, starting_offset| {
                 BytesEncoderDecoder
-                    .decode(&self.buffer, *starting_offset as usize)
+                    .decode(&self.buffer, starting_offset as usize)
                     .0
-            })
+            },
+            index,
+        )
     }
 
     fn get_string(&self, index: usize) -> Option<Cow<String>> {
         self.assert_field_type(index, SupportedType::TypeString);
-        self.starting_offsets
-            .offset_at(index)
-            .map(|starting_offset| {
+        self.get(
+            |buffer, starting_offset| {
                 StringEncoderDecoder
-                    .decode(&self.buffer, *starting_offset as usize)
+                    .decode(&self.buffer, starting_offset as usize)
                     .0
-            })
+            },
+            index,
+        )
     }
 
     fn assert_field_type(&self, index: usize, expected: SupportedType) {
@@ -120,6 +124,12 @@ impl Page {
             .add_offset(self.current_write_offset as u32);
         self.types.add(field_type);
         self.current_write_offset += bytes_needed_for_encoding as usize;
+    }
+
+    fn get<T, F: Fn(&[u8], usize) -> T>(&self, decode_fn: F, index: usize) -> Option<T> {
+        self.starting_offsets
+            .offset_at(index)
+            .map(|starting_offset| decode_fn(&self.buffer, *starting_offset as usize))
     }
 }
 
