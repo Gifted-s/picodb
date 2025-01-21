@@ -63,9 +63,9 @@ impl Page {
     fn get_u8(&self, index: usize) -> Option<u8> {
         self.assert_field_type(index, SupportedType::TypeU8);
         self.get(
-            |buffer, starting_offset| {
+            |starting_offset| {
                 U8EncoderDecoder
-                    .decode(&self.buffer, starting_offset as usize)
+                    .decode(&self.buffer, starting_offset)
                     .0
                     .into_owned()
             },
@@ -76,9 +76,9 @@ impl Page {
     fn get_u16(&self, index: usize) -> Option<u16> {
         self.assert_field_type(index, SupportedType::TypeU16);
         self.get(
-            |buffer, starting_offset| {
+            |starting_offset| {
                 U16EncoderDecoder
-                    .decode(&self.buffer, starting_offset as usize)
+                    .decode(&self.buffer, starting_offset)
                     .0
                     .into_owned()
             },
@@ -89,11 +89,7 @@ impl Page {
     fn get_bytes(&self, index: usize) -> Option<Cow<[u8]>> {
         self.assert_field_type(index, SupportedType::TypeBytes);
         self.get(
-            |buffer, starting_offset| {
-                BytesEncoderDecoder
-                    .decode(&self.buffer, starting_offset as usize)
-                    .0
-            },
+            |starting_offset| BytesEncoderDecoder.decode(&self.buffer, starting_offset).0,
             index,
         )
     }
@@ -101,11 +97,7 @@ impl Page {
     fn get_string(&self, index: usize) -> Option<Cow<String>> {
         self.assert_field_type(index, SupportedType::TypeString);
         self.get(
-            |buffer, starting_offset| {
-                StringEncoderDecoder
-                    .decode(&self.buffer, starting_offset as usize)
-                    .0
-            },
+            |starting_offset| StringEncoderDecoder.decode(&self.buffer, starting_offset).0,
             index,
         )
     }
@@ -126,10 +118,10 @@ impl Page {
         self.current_write_offset += bytes_needed_for_encoding as usize;
     }
 
-    fn get<T, F: Fn(&[u8], usize) -> T>(&self, decode_fn: F, index: usize) -> Option<T> {
+    fn get<T, F: Fn(usize) -> T>(&self, decode_fn: F, index: usize) -> Option<T> {
         self.starting_offsets
             .offset_at(index)
-            .map(|starting_offset| decode_fn(&self.buffer, *starting_offset as usize))
+            .map(|starting_offset| decode_fn(*starting_offset as usize))
     }
 }
 
@@ -163,6 +155,7 @@ mod tests {
         let mut page = Page::new(BLOCK_SIZE);
         page.add_u8(250);
         page.add_string(String::from("PebbleDB is an LSM-based storage engine"));
+        page.add_bytes(b"RocksDB is an LSM-based storage engine".to_vec());
 
         assert_eq!(Some(250), page.get_u8(0));
         assert_eq!(
@@ -170,6 +163,12 @@ mod tests {
                 "PebbleDB is an LSM-based storage engine"
             ))),
             page.get_string(1)
+        );
+        assert_eq!(
+            Some(Cow::Owned(
+                b"RocksDB is an LSM-based storage engine".to_vec()
+            )),
+            page.get_bytes(2)
         );
     }
 }
