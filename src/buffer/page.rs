@@ -6,7 +6,6 @@ use crate::encodex::u16_encoder_decoder::U16EncoderDecoder;
 use crate::encodex::u8_encoder_decoder::U8EncoderDecoder;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder};
 use crate::file::starting_offsets::StartingOffsets;
-use byteorder::ByteOrder;
 use std::borrow::Cow;
 
 pub(crate) struct Page {

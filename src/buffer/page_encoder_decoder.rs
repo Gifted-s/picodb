@@ -101,3 +101,38 @@ impl PageDecoder {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::buffer::page_encoder_decoder::{PageDecoder, PageEncoder};
+    use crate::buffer::supported_types::{SupportedType, Types};
+    use crate::file::starting_offsets::StartingOffsets;
+    use byteorder::ByteOrder;
+
+    #[test]
+    fn encode_and_decode_a_page() {
+        let mut starting_offsets = StartingOffsets::new();
+        starting_offsets.add_offset(0);
+        starting_offsets.add_offset(2);
+
+        let mut types = Types::new();
+        types.add(SupportedType::TypeU16);
+        types.add(SupportedType::TypeU16);
+
+        let mut buffer = vec![0; 512];
+        byteorder::LittleEndian::write_u16(&mut buffer[0..2], 200);
+        byteorder::LittleEndian::write_u16(&mut buffer[2..4], 400);
+
+        let mut encoder = PageEncoder {
+            buffer: &mut buffer,
+            starting_offsets: &starting_offsets,
+            types: &types,
+        };
+        encoder.encode();
+
+        let decoded = PageDecoder::decode_page(encoder.buffer.to_vec());
+        assert_eq!(2, decoded.starting_offsets.length());
+        assert_eq!(&SupportedType::TypeU16, decoded.types.type_at(0).unwrap());
+        assert_eq!(&SupportedType::TypeU16, decoded.types.type_at(1).unwrap());
+    }
+}
