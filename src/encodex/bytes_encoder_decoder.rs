@@ -5,7 +5,7 @@ use std::borrow::Cow;
 pub(crate) struct BytesEncoderDecoder;
 
 impl BytesEncoderDecoder {
-    const RESERVED_SIZE_FOR_BYTE_SLICE: usize = size_of::<u16>();
+    pub(crate) const RESERVED_SIZE_FOR_BYTE_SLICE: usize = size_of::<u16>();
 }
 
 impl EncoderDecoder<[u8]> for BytesEncoderDecoder {
