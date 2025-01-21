@@ -20,16 +20,11 @@ impl EncoderDecoder<String> for StringEncoderDecoder {
 
     fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (Cow<'a, String>, EndOffset) {
         let (decoded_slice, end_offset) = BytesEncoderDecoder.decode(encoded, from_offset);
-        match decoded_slice {
-            Cow::Borrowed(bytes) => (
-                Cow::Owned(String::from_utf8_lossy(bytes).into_owned()),
-                end_offset,
-            ),
-            Cow::Owned(bytes) => (
-                Cow::Owned(String::from_utf8_lossy(&bytes).into_owned()),
-                end_offset,
-            ),
-        }
+        let as_string = match decoded_slice {
+            Cow::Borrowed(bytes) => String::from_utf8_lossy(bytes).into_owned(),
+            Cow::Owned(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+        };
+        (Cow::Owned(as_string), end_offset)
     }
 }
 
