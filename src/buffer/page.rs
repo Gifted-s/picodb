@@ -1,4 +1,4 @@
-use crate::buffer::page_encoder::PageEncoder;
+use crate::buffer::page_encoder::{PageDecoder, PageEncoder};
 use crate::buffer::supported_types::{SupportedType, Types};
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
@@ -11,11 +11,11 @@ use std::borrow::Cow;
 
 const RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS: usize = size_of::<u16>();
 
-struct Page {
-    buffer: Vec<u8>,
-    starting_offsets: StartingOffsets,
-    types: Types,
-    current_write_offset: usize,
+pub(crate) struct Page {
+    pub(crate) buffer: Vec<u8>,
+    pub(crate) starting_offsets: StartingOffsets,
+    pub(crate) types: Types,
+    pub(crate) current_write_offset: usize,
 }
 
 impl Page {
@@ -32,35 +32,7 @@ impl Page {
         if buffer.is_empty() {
             panic!("buffer cannot be empty while decoding the page");
         }
-
-        let offset_containing_number_of_offsets =
-            buffer.len() - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS;
-        let number_of_offsets =
-            byteorder::LittleEndian::read_u16(&buffer[offset_containing_number_of_offsets..])
-                as usize;
-
-        match number_of_offsets {
-            0 => Page {
-                buffer,
-                starting_offsets: StartingOffsets::new(),
-                types: Types::new(),
-                current_write_offset: 0,
-            },
-            _ => {
-                let starting_offsets = Self::decode_starting_offsets(&buffer, number_of_offsets);
-                let types = Self::decode_types(&buffer, number_of_offsets);
-                let end_offset = types.last().unwrap().end_offset_post_decode(
-                    &buffer,
-                    *(starting_offsets.last_offset().unwrap()) as usize,
-                );
-                Page {
-                    buffer,
-                    starting_offsets,
-                    types,
-                    current_write_offset: end_offset,
-                }
-            }
-        }
+        PageDecoder::decode_page(buffer)
     }
 
     fn add_u8(&mut self, value: u8) {
@@ -153,31 +125,6 @@ impl Page {
         };
         encoder.encode();
         &self.buffer
-    }
-
-    fn decode_starting_offsets(buffer: &[u8], number_of_offsets: usize) -> StartingOffsets {
-        let offset_containing_encoded_starting_offsets = buffer.len()
-            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
-            - StartingOffsets::size_in_bytes_for(number_of_offsets);
-
-        StartingOffsets::decode_from(
-            &buffer[offset_containing_encoded_starting_offsets
-                ..offset_containing_encoded_starting_offsets
-                    + StartingOffsets::size_in_bytes_for(number_of_offsets)],
-        )
-    }
-
-    fn decode_types(buffer: &[u8], number_of_offsets: usize) -> Types {
-        let number_of_types = number_of_offsets;
-        let offset_containing_types = buffer.len()
-            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
-            - StartingOffsets::size_in_bytes_for(number_of_offsets)
-            - Types::size_in_bytes_for(number_of_types);
-
-        Types::decode_from(
-            &buffer[offset_containing_types
-                ..offset_containing_types + Types::size_in_bytes_for(number_of_types)],
-        )
     }
 
     fn assert_field_type(&self, index: usize, expected: SupportedType) {

@@ -1,3 +1,4 @@
+use crate::buffer::page::Page;
 use crate::buffer::supported_types::Types;
 use crate::file::starting_offsets::StartingOffsets;
 use byteorder::ByteOrder;
@@ -10,8 +11,9 @@ pub(crate) struct PageEncoder<'a> {
     pub(crate) types: &'a Types,
 }
 
-impl<'a> PageEncoder<'a> {
+pub(crate) struct PageDecoder;
 
+impl<'a> PageEncoder<'a> {
     pub(crate) fn encode(&mut self) {
         self.write_encoded_starting_offsets(&self.starting_offsets.encode());
         self.write_types(&self.types.encode());
@@ -48,5 +50,54 @@ impl<'a> PageEncoder<'a> {
             &mut encoded_page[encoded_page_length - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS..],
             self.starting_offsets.length() as u16,
         );
+    }
+}
+
+impl PageDecoder {
+    pub(crate) fn decode_page(buffer: Vec<u8>) -> Page {
+        let offset_containing_number_of_offsets =
+            buffer.len() - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS;
+        let number_of_offsets =
+            byteorder::LittleEndian::read_u16(&buffer[offset_containing_number_of_offsets..])
+                as usize;
+
+        let starting_offsets = Self::decode_starting_offsets(&buffer, number_of_offsets);
+        let types = Self::decode_types(&buffer, number_of_offsets);
+        let end_offset = types
+            .last()
+            .unwrap()
+            .end_offset_post_decode(&buffer, *(starting_offsets.last_offset().unwrap()) as usize);
+
+        Page {
+            buffer,
+            starting_offsets,
+            types,
+            current_write_offset: end_offset,
+        }
+    }
+
+    fn decode_starting_offsets(buffer: &[u8], number_of_offsets: usize) -> StartingOffsets {
+        let offset_containing_encoded_starting_offsets = buffer.len()
+            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
+            - StartingOffsets::size_in_bytes_for(number_of_offsets);
+
+        StartingOffsets::decode_from(
+            &buffer[offset_containing_encoded_starting_offsets
+                ..offset_containing_encoded_starting_offsets
+                    + StartingOffsets::size_in_bytes_for(number_of_offsets)],
+        )
+    }
+
+    fn decode_types(buffer: &[u8], number_of_offsets: usize) -> Types {
+        let number_of_types = number_of_offsets;
+        let offset_containing_types = buffer.len()
+            - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
+            - StartingOffsets::size_in_bytes_for(number_of_offsets)
+            - Types::size_in_bytes_for(number_of_types);
+
+        Types::decode_from(
+            &buffer[offset_containing_types
+                ..offset_containing_types + Types::size_in_bytes_for(number_of_types)],
+        )
     }
 }
