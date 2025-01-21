@@ -2,6 +2,7 @@ use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::{EncoderDecoder, EndOffset};
 use crate::file::starting_offsets::StartingOffsets;
 use byteorder::ByteOrder;
+use std::borrow::Cow;
 use std::rc::Rc;
 
 const RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS: usize = size_of::<u16>();
@@ -112,7 +113,10 @@ impl Page {
 
     fn bytes_at(&self, offset: usize) -> &[u8] {
         let (decoded, _) = BytesEncoderDecoder.decode(&self.buffer, offset);
-        decoded
+        match decoded {
+            Cow::Borrowed(slice) => slice,
+            _ => unreachable!(),
+        }
     }
 
     fn has_capacity_for(&self, buffer: &[u8]) -> bool {

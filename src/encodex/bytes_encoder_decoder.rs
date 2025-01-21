@@ -1,5 +1,6 @@
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder, EndOffset};
 use byteorder::ByteOrder;
+use std::borrow::Cow;
 
 pub(crate) struct BytesEncoderDecoder;
 
@@ -38,11 +39,11 @@ impl EncoderDecoder<[u8]> for BytesEncoderDecoder {
         required_size
     }
 
-    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (&'a [u8], EndOffset) {
+    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (Cow<'a, [u8]>, EndOffset) {
         let source_length = byteorder::LittleEndian::read_u16(&encoded[from_offset..]);
         let end_offset = from_offset + Self::RESERVED_SIZE_FOR_BYTE_SLICE + source_length as usize;
         (
-            &encoded[from_offset + Self::RESERVED_SIZE_FOR_BYTE_SLICE..end_offset],
+            Cow::Borrowed(&encoded[from_offset + Self::RESERVED_SIZE_FOR_BYTE_SLICE..end_offset]),
             end_offset,
         )
     }

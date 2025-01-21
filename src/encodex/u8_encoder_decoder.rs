@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder, EndOffset};
 
 pub struct U8EncoderDecoder;
@@ -21,8 +22,8 @@ impl EncoderDecoder<u8> for U8EncoderDecoder {
         Self::U8_SIZE
     }
 
-    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (&'a u8, EndOffset) {
-        (&encoded[from_offset], from_offset + Self::U8_SIZE)
+    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (Cow<'a, u8>, EndOffset) {
+        (Cow::Owned(encoded[from_offset]), from_offset + Self::U8_SIZE)
     }
 }
 
@@ -49,7 +50,7 @@ mod tests {
         let number_of_bytes_for_encoding = U8EncoderDecoder.encode(&source, &mut destination, 0);
 
         let (decoded, _) = U8EncoderDecoder.decode(&destination[..number_of_bytes_for_encoding], 0);
-        assert_eq!(decoded, &source);
+        assert_eq!(decoded.as_ref(), &source);
     }
 
     #[test]
@@ -60,6 +61,6 @@ mod tests {
         let _ = U8EncoderDecoder.encode(&source, &mut destination, 10);
 
         let (decoded, _) = U8EncoderDecoder.decode(&destination[..], 10);
-        assert_eq!(decoded, &source);
+        assert_eq!(decoded.as_ref(), &source);
     }
 }
