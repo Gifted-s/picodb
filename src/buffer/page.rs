@@ -319,24 +319,27 @@ mod tests {
         page.mutate_string(String::from("RocksDB"), 0);
 
         assert_eq!(
-            Some(Cow::Owned(String::from(
-                "RocksDB"
-            ))),
+            Some(Cow::Owned(String::from("RocksDB"))),
             page.get_string(0)
         );
     }
 
     #[test]
-    fn add_fields_and_then_mutate_those_fields_in_the_decoded_page(){
+    fn add_fields_and_then_mutate_those_fields_in_the_decoded_page() {
         let mut page = Page::new(BLOCK_SIZE);
-        page.add_string(String::from("PebbleDB is an LSM-based key/value storage engine"));
+        page.add_string(String::from(
+            "PebbleDB is an LSM-based key/value storage engine",
+        ));
         page.add_u8(80);
         page.add_u16(160);
 
         let encoded = page.finish();
         let mut decoded = Page::decode_from(encoded.to_vec());
 
-        decoded.mutate_string(String::from("Rocks-DB is an LSM-based key/value storage engine"), 0);
+        decoded.mutate_string(
+            String::from("Rocks-DB is an LSM-based key/value storage engine"),
+            0,
+        );
         decoded.mutate_u8(160, 1);
         decoded.mutate_u16(320, 2);
 
@@ -351,9 +354,11 @@ mod tests {
     }
 
     #[test]
-    fn add_fields_in_the_decoded_page(){
+    fn add_fields_in_the_decoded_page() {
         let mut page = Page::new(BLOCK_SIZE);
-        page.add_string(String::from("PebbleDB is an LSM-based key/value storage engine"));
+        page.add_string(String::from(
+            "PebbleDB is an LSM-based key/value storage engine",
+        ));
         page.add_u8(80);
         page.add_u16(160);
 
@@ -371,9 +376,7 @@ mod tests {
         assert_eq!(Some(80), decoded.get_u8(1));
         assert_eq!(Some(160), decoded.get_u16(2));
         assert_eq!(
-            Some(Cow::Owned(String::from(
-                "BoltDB"
-            ))),
+            Some(Cow::Owned(String::from("BoltDB"))),
             decoded.get_string(3)
         );
     }
