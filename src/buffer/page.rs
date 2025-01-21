@@ -41,6 +41,16 @@ impl Page {
         )
     }
 
+    fn mutate_u8(&mut self, value: u8, index: usize) {
+        self.assert_field_type(index, SupportedType::TypeU8);
+        self.mutate_field(
+            |destination, current_write_offset| {
+                U8EncoderDecoder.encode(&value, destination, current_write_offset)
+            },
+            index,
+        );
+    }
+
     fn add_u16(&mut self, value: u16) {
         self.add_field(
             |destination, current_write_offset| {
@@ -48,6 +58,16 @@ impl Page {
             },
             SupportedType::TypeU16,
         )
+    }
+
+    fn mutate_u16(&mut self, value: u16, index: usize) {
+        self.assert_field_type(index, SupportedType::TypeU16);
+        self.mutate_field(
+            |destination, current_write_offset| {
+                U16EncoderDecoder.encode(&value, destination, current_write_offset)
+            },
+            index,
+        );
     }
 
     fn add_bytes(&mut self, value: Vec<u8>) {
@@ -59,6 +79,17 @@ impl Page {
         )
     }
 
+    //TODO: What if the new value does not match the old size
+    fn mutate_bytes(&mut self, value: Vec<u8>, index: usize) {
+        self.assert_field_type(index, SupportedType::TypeBytes);
+        self.mutate_field(
+            |destination, current_write_offset| {
+                BytesEncoderDecoder.encode(&value, destination, current_write_offset)
+            },
+            index,
+        );
+    }
+
     fn add_string(&mut self, value: String) {
         self.add_field(
             |destination, current_write_offset| {
@@ -66,6 +97,17 @@ impl Page {
             },
             SupportedType::TypeString,
         )
+    }
+
+    //TODO: What if the new value does not match the old size
+    fn mutate_string(&mut self, value: String, index: usize) {
+        self.assert_field_type(index, SupportedType::TypeString);
+        self.mutate_field(
+            |destination, current_write_offset| {
+                StringEncoderDecoder.encode(&value, destination, current_write_offset)
+            },
+            index,
+        );
     }
 
     fn get_u8(&self, index: usize) -> Option<u8> {
@@ -138,6 +180,17 @@ impl Page {
             .add_offset(self.current_write_offset as u32);
         self.types.add(field_type);
         self.current_write_offset += bytes_needed_for_encoding as usize;
+    }
+
+    fn mutate_field<F: Fn(&mut [u8], usize) -> BytesNeededForEncoding>(
+        &mut self,
+        encode_fn: F,
+        index: usize,
+    ) {
+        encode_fn(
+            &mut self.buffer,
+            *(self.starting_offsets.offset_at(index).unwrap()) as usize,
+        );
     }
 
     fn get<T, F: Fn(usize) -> T>(&self, decode_fn: F, index: usize) -> Option<T> {
@@ -230,5 +283,98 @@ mod tests {
             decoded.get_bytes(2)
         );
         assert_eq!(Some(500), decoded.get_u16(3));
+    }
+
+    #[test]
+    fn mutate_an_u8() {
+        let mut page = Page::new(BLOCK_SIZE);
+        page.add_u8(50);
+        page.mutate_u8(252, 0);
+
+        assert_eq!(Some(252), page.get_u8(0));
+    }
+
+    #[test]
+    fn mutate_an_u16() {
+        let mut page = Page::new(BLOCK_SIZE);
+        page.add_u16(50);
+        page.mutate_u16(252, 0);
+
+        assert_eq!(Some(252), page.get_u16(0));
+    }
+
+    #[test]
+    fn mutate_bytes() {
+        let mut page = Page::new(BLOCK_SIZE);
+        page.add_bytes(b"Bolt-DB".to_vec());
+        page.mutate_bytes(b"RocksDB".to_vec(), 0);
+
+        assert_eq!(Some(Cow::Owned(b"RocksDB".to_vec())), page.get_bytes(0));
+    }
+
+    #[test]
+    fn mutate_string() {
+        let mut page = Page::new(BLOCK_SIZE);
+        page.add_string(String::from("Bolt-DB"));
+        page.mutate_string(String::from("RocksDB"), 0);
+
+        assert_eq!(
+            Some(Cow::Owned(String::from(
+                "RocksDB"
+            ))),
+            page.get_string(0)
+        );
+    }
+
+    #[test]
+    fn add_fields_and_then_mutate_those_fields_in_the_decoded_page(){
+        let mut page = Page::new(BLOCK_SIZE);
+        page.add_string(String::from("PebbleDB is an LSM-based key/value storage engine"));
+        page.add_u8(80);
+        page.add_u16(160);
+
+        let encoded = page.finish();
+        let mut decoded = Page::decode_from(encoded.to_vec());
+
+        decoded.mutate_string(String::from("Rocks-DB is an LSM-based key/value storage engine"), 0);
+        decoded.mutate_u8(160, 1);
+        decoded.mutate_u16(320, 2);
+
+        assert_eq!(
+            Some(Cow::Owned(String::from(
+                "Rocks-DB is an LSM-based key/value storage engine"
+            ))),
+            decoded.get_string(0)
+        );
+        assert_eq!(Some(160), decoded.get_u8(1));
+        assert_eq!(Some(320), decoded.get_u16(2));
+    }
+
+    #[test]
+    fn add_fields_in_the_decoded_page(){
+        let mut page = Page::new(BLOCK_SIZE);
+        page.add_string(String::from("PebbleDB is an LSM-based key/value storage engine"));
+        page.add_u8(80);
+        page.add_u16(160);
+
+        let encoded = page.finish();
+        let mut decoded = Page::decode_from(encoded.to_vec());
+
+        decoded.add_string(String::from("BoltDB"));
+
+        assert_eq!(
+            Some(Cow::Owned(String::from(
+                "PebbleDB is an LSM-based key/value storage engine"
+            ))),
+            decoded.get_string(0)
+        );
+        assert_eq!(Some(80), decoded.get_u8(1));
+        assert_eq!(Some(160), decoded.get_u16(2));
+        assert_eq!(
+            Some(Cow::Owned(String::from(
+                "BoltDB"
+            ))),
+            decoded.get_string(3)
+        );
     }
 }
