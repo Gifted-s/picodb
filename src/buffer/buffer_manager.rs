@@ -67,6 +67,7 @@ impl<'a, PathType: AsRef<Path>> BufferManager<'a, PathType> {
                 if !buffer.is_pinned() {
                     self.available_buffers += 1;
                 }
+                return;
             }
         }
     }
