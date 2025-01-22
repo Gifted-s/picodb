@@ -1,4 +1,4 @@
-use crate::buffer::page::Page;
+use crate::buffer::page::BufferPage;
 use crate::buffer::supported_types::Types;
 use crate::file::starting_offsets::StartingOffsets;
 use byteorder::ByteOrder;
@@ -54,7 +54,7 @@ impl<'a> PageEncoder<'a> {
 }
 
 impl PageDecoder {
-    pub(crate) fn decode_page(buffer: Vec<u8>) -> Page {
+    pub(crate) fn decode_page(buffer: Vec<u8>) -> BufferPage {
         let offset_containing_number_of_offsets =
             buffer.len() - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS;
         let number_of_offsets =
@@ -68,7 +68,7 @@ impl PageDecoder {
             .unwrap()
             .end_offset_post_decode(&buffer, *(starting_offsets.last_offset().unwrap()) as usize);
 
-        Page {
+        BufferPage {
             buffer,
             starting_offsets,
             types,

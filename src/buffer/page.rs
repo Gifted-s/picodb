@@ -8,28 +8,30 @@ use crate::encodex::{BytesNeededForEncoding, EncoderDecoder};
 use crate::file::starting_offsets::StartingOffsets;
 use std::borrow::Cow;
 
-pub(crate) struct Page {
+pub(crate) struct BufferPage {
     pub(crate) buffer: Vec<u8>,
     pub(crate) starting_offsets: StartingOffsets,
     pub(crate) types: Types,
     pub(crate) current_write_offset: usize,
 }
 
-impl Page {
-    fn new(block_size: usize) -> Self {
-        Page {
-            buffer: vec![0; block_size],
-            starting_offsets: StartingOffsets::new(),
-            types: Types::new(),
-            current_write_offset: 0,
-        }
-    }
-
+impl crate::page::Page for BufferPage {
     fn decode_from(buffer: Vec<u8>) -> Self {
         if buffer.is_empty() {
             panic!("buffer cannot be empty while decoding the page");
         }
         PageDecoder::decode_page(buffer)
+    }
+}
+
+impl BufferPage {
+    fn new(block_size: usize) -> Self {
+        BufferPage {
+            buffer: vec![0; block_size],
+            starting_offsets: StartingOffsets::new(),
+            types: Types::new(),
+            current_write_offset: 0,
+        }
     }
 
     fn add_u8(&mut self, value: u8) {
@@ -202,14 +204,15 @@ impl Page {
 
 #[cfg(test)]
 mod tests {
-    use crate::buffer::page::Page;
+    use crate::buffer::page::BufferPage;
     use std::borrow::Cow;
+    use crate::page::Page;
 
     const BLOCK_SIZE: usize = 4096;
 
     #[test]
     fn add_a_single_field_and_get_the_value() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(250);
 
         assert_eq!(Some(250), page.get_u8(0));
@@ -217,7 +220,7 @@ mod tests {
 
     #[test]
     fn add_a_couple_of_fields_and_get_the_values() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(250);
         page.add_u16(500);
 
@@ -227,7 +230,7 @@ mod tests {
 
     #[test]
     fn add_a_few_fields_and_get_the_values() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(250);
         page.add_string(String::from("PebbleDB is an LSM-based storage engine"));
         page.add_bytes(b"RocksDB is an LSM-based storage engine".to_vec());
@@ -249,25 +252,25 @@ mod tests {
 
     #[test]
     fn decode_a_page_with_single_field() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(250);
 
         let encoded = page.finish();
-        let decoded = Page::decode_from(encoded.to_vec());
+        let decoded = BufferPage::decode_from(encoded.to_vec());
 
         assert_eq!(Some(250), decoded.get_u8(0));
     }
 
     #[test]
     fn decode_a_page_with_few_fields() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(250);
         page.add_string(String::from("PebbleDB is an LSM-based storage engine"));
         page.add_bytes(b"RocksDB is an LSM-based storage engine".to_vec());
         page.add_u16(500);
 
         let encoded = page.finish();
-        let decoded = Page::decode_from(encoded.to_vec());
+        let decoded = BufferPage::decode_from(encoded.to_vec());
 
         assert_eq!(Some(250), decoded.get_u8(0));
         assert_eq!(
@@ -287,7 +290,7 @@ mod tests {
 
     #[test]
     fn mutate_an_u8() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(50);
         page.mutate_u8(252, 0);
 
@@ -296,7 +299,7 @@ mod tests {
 
     #[test]
     fn mutate_an_u16() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u16(50);
         page.mutate_u16(252, 0);
 
@@ -305,7 +308,7 @@ mod tests {
 
     #[test]
     fn mutate_bytes() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_bytes(b"Bolt-DB".to_vec());
         page.mutate_bytes(b"RocksDB".to_vec(), 0);
 
@@ -314,7 +317,7 @@ mod tests {
 
     #[test]
     fn mutate_string() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_string(String::from("Bolt-DB"));
         page.mutate_string(String::from("RocksDB"), 0);
 
@@ -326,7 +329,7 @@ mod tests {
 
     #[test]
     fn add_fields_and_then_mutate_those_fields_in_the_decoded_page() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_string(String::from(
             "PebbleDB is an LSM-based key/value storage engine",
         ));
@@ -334,7 +337,7 @@ mod tests {
         page.add_u16(160);
 
         let encoded = page.finish();
-        let mut decoded = Page::decode_from(encoded.to_vec());
+        let mut decoded = BufferPage::decode_from(encoded.to_vec());
 
         decoded.mutate_string(
             String::from("Rocks-DB is an LSM-based key/value storage engine"),
@@ -355,7 +358,7 @@ mod tests {
 
     #[test]
     fn add_fields_in_the_decoded_page() {
-        let mut page = Page::new(BLOCK_SIZE);
+        let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_string(String::from(
             "PebbleDB is an LSM-based key/value storage engine",
         ));
@@ -363,7 +366,7 @@ mod tests {
         page.add_u16(160);
 
         let encoded = page.finish();
-        let mut decoded = Page::decode_from(encoded.to_vec());
+        let mut decoded = BufferPage::decode_from(encoded.to_vec());
 
         decoded.add_string(String::from("BoltDB"));
 
