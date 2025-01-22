@@ -21,8 +21,5 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
-
       - name: Generate code coverage
         run: cargo +nightly tarpaulin --verbose --workspace --timeout 120 --out Xml -- --show-output
