@@ -80,7 +80,7 @@ impl LogPage {
 
     pub(crate) fn finish(&mut self) -> &[u8] {
         if self.starting_offsets.length() == 0 {
-            panic!("empty log page")
+            return &self.buffer;
         }
         let mut page_encoder = PageEncoder {
             buffer: &mut self.buffer,
@@ -233,10 +233,10 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn attempt_to_create_a_log_with_no_records() {
         let mut page = LogPage::new(110);
-        let _ = page.finish();
+        let buffer = page.finish();
+        assert_eq!(110, buffer.len());
     }
 
     #[test]

@@ -16,7 +16,7 @@ impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
         file_manager: &'a mut FileManager<PathType>,
         current_block_id: BlockId,
     ) -> Result<BackwardLogIterator<'a, PathType>, io::Error> {
-        let page = file_manager.read_into::<LogPage>(&current_block_id)?;
+        let page = file_manager.read::<LogPage>(&current_block_id)?;
 
         Ok(BackwardLogIterator {
             file_manager,
@@ -34,7 +34,7 @@ impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
             self.current_block_id = self.current_block_id.previous().unwrap();
             let page = self
                 .file_manager
-                .read_into::<LogPage>(&self.current_block_id)
+                .read::<LogPage>(&self.current_block_id)
                 .unwrap();
 
             self.record_iterator = BackwardRecordIterator::new(Rc::new(page));

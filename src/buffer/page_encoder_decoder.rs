@@ -60,6 +60,14 @@ impl PageDecoder {
         let number_of_offsets =
             byteorder::LittleEndian::read_u16(&buffer[offset_containing_number_of_offsets..])
                 as usize;
+        if number_of_offsets == 0 {
+            return BufferPage {
+                buffer,
+                starting_offsets: StartingOffsets::new(),
+                types: Types::new(),
+                current_write_offset: 0,
+            };
+        }
 
         let starting_offsets = Self::decode_starting_offsets(&buffer, number_of_offsets);
         let types = Self::decode_types(&buffer, number_of_offsets);

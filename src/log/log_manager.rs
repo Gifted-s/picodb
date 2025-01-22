@@ -5,7 +5,7 @@ use crate::log::page::LogPage;
 use std::io;
 use std::path::Path;
 
-struct LogManager<'a, PathType: AsRef<Path>> {
+pub(crate) struct LogManager<'a, PathType: AsRef<Path>> {
     file_manager: &'a mut FileManager<PathType>,
     log_file_name: String,
     log_page: LogPage,
@@ -15,7 +15,7 @@ struct LogManager<'a, PathType: AsRef<Path>> {
 }
 
 impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
-    fn new(
+    pub(crate) fn new(
         file_manager: &'a mut FileManager<PathType>,
         log_file_name: String,
     ) -> Result<LogManager<'a, PathType>, io::Error> {
@@ -27,7 +27,7 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
             ),
             _ => {
                 let block_id = BlockId::new(&log_file_name, number_of_blocks - 1);
-                let page = file_manager.read_into::<LogPage>(&block_id)?;
+                let page = file_manager.read::<LogPage>(&block_id)?;
                 (block_id, page)
             }
         };
@@ -59,11 +59,15 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
         BackwardLogIterator::new(self.file_manager, self.current_block_id.clone())
     }
 
-    fn flush(&mut self, log_sequence_number: usize) -> Result<(), io::Error> {
+    pub(crate) fn flush(&mut self, log_sequence_number: usize) -> Result<(), io::Error> {
         if log_sequence_number >= self.last_saved_log_sequence_number {
             self.force_flush()?
         }
         Ok(())
+    }
+
+    pub(crate) fn file_manager(&mut self) -> &mut FileManager<PathType> {
+        &mut self.file_manager
     }
 
     fn force_flush(&mut self) -> Result<(), io::Error> {

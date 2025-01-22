@@ -25,7 +25,7 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         })
     }
 
-    pub(crate) fn read_into<T: Page>(&mut self, block_id: &BlockId) -> Result<T, io::Error> {
+    pub(crate) fn read<T: Page>(&mut self, block_id: &BlockId) -> Result<T, io::Error> {
         let mut read_buffer = vec![0; self.block_size];
         self.seek_and_run(block_id, |file| {
             file.read(&mut read_buffer).map(|_number_of_bytes_read| ())
@@ -132,7 +132,7 @@ mod tests {
         let result = file_manager.write(&block_id, write_buffer);
         assert!(result.is_ok());
 
-        let page = file_manager.read_into::<TestPage>(&block_id).unwrap();
+        let page = file_manager.read::<TestPage>(&block_id).unwrap();
         assert_eq!(&page.buffer()[..write_buffer.len()], write_buffer);
     }
 
@@ -148,7 +148,7 @@ mod tests {
         let result = file_manager.write(&block_id, write_buffer);
         assert!(result.is_ok());
 
-        let page = file_manager.read_into::<TestPage>(&block_id).unwrap();
+        let page = file_manager.read::<TestPage>(&block_id).unwrap();
         assert_eq!(&page.buffer()[..write_buffer.len()], write_buffer);
     }
 
@@ -191,7 +191,7 @@ mod tests {
 
         let block_id = BlockId::new(file_name, 0);
 
-        let page = file_manager.read_into::<TestPage>(&block_id).unwrap();
+        let page = file_manager.read::<TestPage>(&block_id).unwrap();
         assert_eq!(vec![0; BLOCK_SIZE], page.buffer);
     }
 

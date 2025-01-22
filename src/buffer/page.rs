@@ -29,7 +29,7 @@ impl crate::page::Page for BufferPage {
 }
 
 impl BufferPage {
-    fn new(block_size: usize) -> Self {
+    pub(crate) fn new(block_size: usize) -> Self {
         BufferPage {
             buffer: vec![0; block_size],
             starting_offsets: StartingOffsets::new(),
@@ -38,7 +38,7 @@ impl BufferPage {
         }
     }
 
-    fn add_u8(&mut self, value: u8) {
+    pub(crate) fn add_u8(&mut self, value: u8) {
         self.add_field(
             |destination, current_write_offset| {
                 U8EncoderDecoder.encode(&value, destination, current_write_offset)
@@ -47,7 +47,7 @@ impl BufferPage {
         )
     }
 
-    fn mutate_u8(&mut self, value: u8, index: usize) {
+    pub(crate) fn mutate_u8(&mut self, value: u8, index: usize) {
         self.assert_field_type(index, SupportedType::TypeU8);
         self.mutate_field(
             |destination, current_write_offset| {
@@ -57,7 +57,7 @@ impl BufferPage {
         );
     }
 
-    fn add_u16(&mut self, value: u16) {
+    pub(crate) fn add_u16(&mut self, value: u16) {
         self.add_field(
             |destination, current_write_offset| {
                 U16EncoderDecoder.encode(&value, destination, current_write_offset)
@@ -66,7 +66,7 @@ impl BufferPage {
         )
     }
 
-    fn mutate_u16(&mut self, value: u16, index: usize) {
+    pub(crate) fn mutate_u16(&mut self, value: u16, index: usize) {
         self.assert_field_type(index, SupportedType::TypeU16);
         self.mutate_field(
             |destination, current_write_offset| {
@@ -76,7 +76,7 @@ impl BufferPage {
         );
     }
 
-    fn add_bytes(&mut self, value: Vec<u8>) {
+    pub(crate) fn add_bytes(&mut self, value: Vec<u8>) {
         self.add_field(
             |destination, current_write_offset| {
                 BytesEncoderDecoder.encode(&value, destination, current_write_offset)
@@ -86,7 +86,7 @@ impl BufferPage {
     }
 
     //TODO: What if the new value does not match the old size
-    fn mutate_bytes(&mut self, value: Vec<u8>, index: usize) {
+    pub(crate) fn mutate_bytes(&mut self, value: Vec<u8>, index: usize) {
         self.assert_field_type(index, SupportedType::TypeBytes);
         self.mutate_field(
             |destination, current_write_offset| {
@@ -96,7 +96,7 @@ impl BufferPage {
         );
     }
 
-    fn add_string(&mut self, value: String) {
+    pub(crate) fn add_string(&mut self, value: String) {
         self.add_field(
             |destination, current_write_offset| {
                 StringEncoderDecoder.encode(&value, destination, current_write_offset)
@@ -106,7 +106,7 @@ impl BufferPage {
     }
 
     //TODO: What if the new value does not match the old size
-    fn mutate_string(&mut self, value: String, index: usize) {
+    pub(crate) fn mutate_string(&mut self, value: String, index: usize) {
         self.assert_field_type(index, SupportedType::TypeString);
         self.mutate_field(
             |destination, current_write_offset| {
@@ -116,7 +116,7 @@ impl BufferPage {
         );
     }
 
-    fn get_u8(&self, index: usize) -> Option<u8> {
+    pub(crate) fn get_u8(&self, index: usize) -> Option<u8> {
         self.assert_field_type(index, SupportedType::TypeU8);
         self.get(
             |starting_offset| {
@@ -129,7 +129,7 @@ impl BufferPage {
         )
     }
 
-    fn get_u16(&self, index: usize) -> Option<u16> {
+    pub(crate) fn get_u16(&self, index: usize) -> Option<u16> {
         self.assert_field_type(index, SupportedType::TypeU16);
         self.get(
             |starting_offset| {
@@ -142,7 +142,7 @@ impl BufferPage {
         )
     }
 
-    fn get_bytes(&self, index: usize) -> Option<Cow<[u8]>> {
+    pub(crate) fn get_bytes(&self, index: usize) -> Option<Cow<[u8]>> {
         self.assert_field_type(index, SupportedType::TypeBytes);
         self.get(
             |starting_offset| BytesEncoderDecoder.decode(&self.buffer, starting_offset).0,
@@ -150,7 +150,7 @@ impl BufferPage {
         )
     }
 
-    fn get_string(&self, index: usize) -> Option<Cow<String>> {
+    pub(crate) fn get_string(&self, index: usize) -> Option<Cow<String>> {
         self.assert_field_type(index, SupportedType::TypeString);
         self.get(
             |starting_offset| StringEncoderDecoder.decode(&self.buffer, starting_offset).0,
@@ -158,7 +158,7 @@ impl BufferPage {
         )
     }
 
-    fn finish(&mut self) -> &[u8] {
+    pub(crate) fn finish(&mut self) -> &[u8] {
         if self.starting_offsets.length() == 0 {
             panic!("empty page")
         }

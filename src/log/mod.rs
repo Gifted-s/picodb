@@ -1,3 +1,3 @@
 mod iterator;
-mod log_manager;
+pub(crate) mod log_manager;
 mod page;
