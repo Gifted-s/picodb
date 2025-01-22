@@ -1,6 +1,7 @@
 use crate::file::block_id::BlockId;
 use crate::file::file_manager::FileManager;
-use crate::log::page::{BackwardRecordIterator, Page};
+use crate::log::page::{BackwardRecordIterator, LogPage};
+use crate::page::Page;
 use std::io;
 use std::path::Path;
 use std::rc::Rc;
@@ -22,7 +23,7 @@ impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
         Ok(BackwardLogIterator {
             file_manager,
             current_block_id,
-            record_iterator: BackwardRecordIterator::new(Rc::new(Page::decode_from(buffer))),
+            record_iterator: BackwardRecordIterator::new(Rc::new(LogPage::decode_from(buffer))),
         })
     }
 
@@ -38,7 +39,8 @@ impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
                 .read_into(&mut buffer, &self.current_block_id)
                 .unwrap();
 
-            self.record_iterator = BackwardRecordIterator::new(Rc::new(Page::decode_from(buffer)));
+            self.record_iterator =
+                BackwardRecordIterator::new(Rc::new(LogPage::decode_from(buffer)));
             return self.record_iterator.record().map(Vec::from);
         }
         None

@@ -7,7 +7,7 @@ use std::rc::Rc;
 
 const RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS: usize = size_of::<u16>();
 
-pub(crate) struct Page {
+pub(crate) struct LogPage {
     buffer: Vec<u8>,
     starting_offsets: StartingOffsets,
     current_write_offset: usize,
@@ -15,12 +15,12 @@ pub(crate) struct Page {
 
 pub(crate) struct BackwardRecordIterator {
     //TODO: revisit, maybe a reference, or an Arc
-    page: Rc<Page>,
+    page: Rc<LogPage>,
     current_offset_index: Option<usize>,
 }
 
 impl BackwardRecordIterator {
-    pub(crate) fn new(page: Rc<Page>) -> Self {
+    pub(crate) fn new(page: Rc<LogPage>) -> Self {
         let current_offset_index = page.starting_offsets.length() - 1;
         Self {
             page,
@@ -42,20 +42,22 @@ impl BackwardRecordIterator {
     }
 }
 
-impl Page {
-    pub(crate) fn new(block_size: usize) -> Self {
-        Page {
-            buffer: vec![0; block_size],
-            starting_offsets: StartingOffsets::new(),
-            current_write_offset: 0,
-        }
-    }
-
-    pub(crate) fn decode_from(buffer: Vec<u8>) -> Self {
+impl crate::page::Page for LogPage {
+    fn decode_from(buffer: Vec<u8>) -> Self {
         if buffer.is_empty() {
             panic!("buffer cannot be empty while decoding the log page");
         }
         PageDecoder::decode_page(buffer)
+    }
+}
+
+impl LogPage {
+    pub(crate) fn new(block_size: usize) -> Self {
+        LogPage {
+            buffer: vec![0; block_size],
+            starting_offsets: StartingOffsets::new(),
+            current_write_offset: 0,
+        }
     }
 
     pub(crate) fn add(&mut self, data: &[u8]) -> bool {
@@ -84,7 +86,7 @@ impl Page {
         &self.buffer
     }
 
-    fn backward_iterator(self: Rc<Page>) -> BackwardRecordIterator {
+    fn backward_iterator(self: Rc<LogPage>) -> BackwardRecordIterator {
         if self.starting_offsets.length() == 0 {
             panic!("empty log page")
         }
@@ -148,7 +150,7 @@ impl<'a> PageEncoder<'a> {
 }
 
 impl PageDecoder {
-    pub(crate) fn decode_page(buffer: Vec<u8>) -> Page {
+    pub(crate) fn decode_page(buffer: Vec<u8>) -> LogPage {
         let offset_containing_number_of_offsets =
             buffer.len() - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS;
 
@@ -159,7 +161,7 @@ impl PageDecoder {
         let starting_offsets = Self::decode_starting_offsets(&buffer, &number_of_offsets);
         let end_offset = Self::current_write_offset(&buffer, &starting_offsets);
 
-        Page {
+        LogPage {
             buffer,
             starting_offsets,
             current_write_offset: end_offset,
@@ -187,12 +189,13 @@ impl PageDecoder {
 
 #[cfg(test)]
 mod tests {
-    use crate::log::page::Page;
+    use crate::log::page::LogPage;
+    use crate::page::Page;
     use std::rc::Rc;
 
     #[test]
     fn attempt_to_add_a_record_to_a_page_with_insufficient_size() {
-        let mut page = Page::new(30);
+        let mut page = LogPage::new(30);
         assert_eq!(
             false,
             page.add(b"RocksDB is an LSM-based key/value storage engine")
@@ -201,7 +204,7 @@ mod tests {
 
     #[test]
     fn attempt_to_add_a_couple_of_records_in_a_page_with_size_sufficient_for_only_one_record() {
-        let mut page = Page::new(60);
+        let mut page = LogPage::new(60);
         assert_eq!(
             true,
             page.add(b"RocksDB is an LSM-based key/value storage engine")
@@ -214,7 +217,7 @@ mod tests {
 
     #[test]
     fn attempt_to_add_a_couple_of_records_successfully_in_a_page_with_just_enough_size() {
-        let mut page = Page::new(110);
+        let mut page = LogPage::new(110);
         assert_eq!(
             true,
             page.add(b"RocksDB is an LSM-based key/value storage engine")
@@ -228,13 +231,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn attempt_to_create_a_log_with_no_records() {
-        let mut page = Page::new(110);
+        let mut page = LogPage::new(110);
         let _ = page.finish();
     }
 
     #[test]
     fn create_a_log_with_a_single_record() {
-        let mut page = Page::new(4096);
+        let mut page = LogPage::new(4096);
         page.add(b"RocksDB is an LSM-based key/value storage engine");
 
         let _ = page.finish();
@@ -247,7 +250,7 @@ mod tests {
 
     #[test]
     fn create_a_log_with_a_couple_of_records() {
-        let mut page = Page::new(4096);
+        let mut page = LogPage::new(4096);
         page.add(b"RocksDB is an LSM-based key/value storage engine");
         page.add(b"PebbleDB is an LSM-based key/value storage engine");
 
@@ -267,7 +270,7 @@ mod tests {
 
     #[test]
     fn create_a_log_with_a_few_records() {
-        let mut page = Page::new(4096);
+        let mut page = LogPage::new(4096);
         (1..=100)
             .map(|record_id| format!("Record {}", record_id))
             .for_each(|record| {
@@ -287,16 +290,16 @@ mod tests {
     #[test]
     #[should_panic]
     fn attempt_to_decode_page_with_zero_records() {
-        Page::decode_from(vec![]);
+        LogPage::decode_from(vec![]);
     }
 
     #[test]
     fn decode_page_with_a_single_record() {
-        let mut page = Page::new(4096);
+        let mut page = LogPage::new(4096);
         page.add(b"PebbleDB is an LSM-based key/value storage engine");
 
         let buffer = page.finish();
-        let decoded_page = Page::decode_from(buffer.to_vec());
+        let decoded_page = LogPage::decode_from(buffer.to_vec());
 
         let _ = page.finish();
         let mut iterator = Rc::new(decoded_page).backward_iterator();
@@ -310,12 +313,12 @@ mod tests {
 
     #[test]
     fn decode_page_with_a_couple_of_records() {
-        let mut page = Page::new(4096);
+        let mut page = LogPage::new(4096);
         page.add(b"PebbleDB is an LSM-based key/value storage engine");
         page.add(b"RocksDB is an LSM-based key/value storage engine");
 
         let buffer = page.finish();
-        let decoded_page = Page::decode_from(buffer.to_vec());
+        let decoded_page = LogPage::decode_from(buffer.to_vec());
 
         let _ = page.finish();
         let mut iterator = Rc::new(decoded_page).backward_iterator();
@@ -333,7 +336,7 @@ mod tests {
 
     #[test]
     fn decode_page_with_a_few_records() {
-        let mut page = Page::new(4096);
+        let mut page = LogPage::new(4096);
         (1..=50)
             .map(|record_id| format!("Record {}", record_id))
             .for_each(|record| {
@@ -341,7 +344,7 @@ mod tests {
             });
 
         let buffer = page.finish();
-        let decoded_page = Page::decode_from(buffer.to_vec());
+        let decoded_page = LogPage::decode_from(buffer.to_vec());
         let mut iterator = Rc::new(decoded_page).backward_iterator();
 
         (1..=50).rev().for_each(|record_id| {

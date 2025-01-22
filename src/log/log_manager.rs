@@ -1,14 +1,15 @@
 use crate::file::block_id::BlockId;
 use crate::file::file_manager::FileManager;
 use crate::log::iterator::BackwardLogIterator;
-use crate::log::page::Page;
+use crate::log::page::LogPage;
+use crate::page::Page;
 use std::io;
 use std::path::Path;
 
 struct LogManager<'a, PathType: AsRef<Path>> {
     file_manager: &'a mut FileManager<PathType>,
     log_file_name: String,
-    log_page: Page,
+    log_page: LogPage,
     current_block_id: BlockId,
     latest_log_sequence_number: usize,
     last_saved_log_sequence_number: usize,
@@ -23,13 +24,13 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
         let (block_id, log_page) = match number_of_blocks {
             0 => (
                 file_manager.append_empty_block(&log_file_name)?,
-                Page::new(file_manager.block_size),
+                LogPage::new(file_manager.block_size),
             ),
             _ => {
                 let block_id = BlockId::new(&log_file_name, number_of_blocks - 1);
                 let mut buffer = vec![0; file_manager.block_size];
                 file_manager.read_into(&mut buffer, &block_id)?;
-                (block_id, Page::decode_from(buffer))
+                (block_id, LogPage::decode_from(buffer))
             }
         };
         Ok(LogManager {
@@ -48,7 +49,7 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
             self.current_block_id = self
                 .file_manager
                 .append_empty_block(self.log_file_name.as_ref())?;
-            self.log_page = Page::new(self.file_manager.block_size);
+            self.log_page = LogPage::new(self.file_manager.block_size);
             assert!(self.log_page.add(buffer));
         }
         self.latest_log_sequence_number = self.latest_log_sequence_number + 1;
