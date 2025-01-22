@@ -71,16 +71,6 @@ impl<'a, PathType: AsRef<Path>> BufferManager<'a, PathType> {
         }
     }
 
-    fn flush(&mut self, block_id: &BlockId) -> Result<(), io::Error> {
-        for buffer in self.buffer_pool.iter_mut() {
-            if buffer.has_block_id(&block_id) {
-                buffer.flush(self.log_manager)?;
-                return Ok(());
-            }
-        }
-        Ok(())
-    }
-
     fn try_pin(&mut self, block_id: BlockId) -> Result<&mut Buffer, BufferPinError> {
         for buffer in self.buffer_pool.iter_mut() {
             if buffer.has_block_id(&block_id) {
