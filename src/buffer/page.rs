@@ -22,10 +22,6 @@ impl crate::page::Page for BufferPage {
         }
         PageDecoder::decode_page(buffer)
     }
-
-    fn buffer(&self) -> &[u8] {
-        &self.buffer
-    }
 }
 
 impl BufferPage {
@@ -215,6 +211,12 @@ mod tests {
     const BLOCK_SIZE: usize = 4096;
 
     #[test]
+    #[should_panic]
+    fn attempt_to_decode_with_an_empty_buffer() {
+        BufferPage::decode_from(vec![]);
+    }
+
+    #[test]
     fn add_a_single_field_and_get_the_value() {
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(250);
@@ -252,6 +254,14 @@ mod tests {
             )),
             page.get_bytes(2)
         );
+    }
+
+    #[test]
+    #[should_panic]
+    fn attempt_to_decode_an_empty_page() {
+        let mut page = BufferPage::new(BLOCK_SIZE);
+
+        page.finish();
     }
 
     #[test]

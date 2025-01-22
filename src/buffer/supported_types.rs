@@ -165,18 +165,21 @@ mod types_tests {
 
 #[cfg(test)]
 mod support_type_tests {
-    use byteorder::ByteOrder;
     use crate::buffer::supported_types::SupportedType;
     use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
-    use crate::encodex::EncoderDecoder;
     use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
+    use crate::encodex::EncoderDecoder;
+    use byteorder::ByteOrder;
 
     #[test]
     fn end_offset_post_decode_for_u8() {
         let mut buffer = vec![0; 100];
-        buffer[0] =  250;
+        buffer[0] = 250;
 
-        assert_eq!(11, SupportedType::TypeU8.end_offset_post_decode(&buffer, 10));
+        assert_eq!(
+            11,
+            SupportedType::TypeU8.end_offset_post_decode(&buffer, 10)
+        );
     }
 
     #[test]
@@ -184,7 +187,10 @@ mod support_type_tests {
         let mut buffer = vec![0; 100];
         byteorder::LittleEndian::write_u16(&mut buffer[0..2], 250);
 
-        assert_eq!(12, SupportedType::TypeU16.end_offset_post_decode(&buffer, 10));
+        assert_eq!(
+            12,
+            SupportedType::TypeU16.end_offset_post_decode(&buffer, 10)
+        );
     }
 
     #[test]

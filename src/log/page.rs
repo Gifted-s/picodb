@@ -49,10 +49,6 @@ impl crate::page::Page for LogPage {
         }
         PageDecoder::decode_page(buffer)
     }
-
-    fn buffer(&self) -> &[u8] {
-        &self.buffer
-    }
 }
 
 impl LogPage {
@@ -237,6 +233,13 @@ mod tests {
         let mut page = LogPage::new(110);
         let buffer = page.finish();
         assert_eq!(110, buffer.len());
+    }
+
+    #[test]
+    #[should_panic]
+    fn attempt_to_create_a_log_iterator_with_no_records() {
+        let page = LogPage::new(4096);
+        Rc::new(page).backward_iterator();
     }
 
     #[test]

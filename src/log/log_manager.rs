@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn append_a_few_records_in_log_with_smaller_block_size_and_iterate_over_it() {
-        const BLOCK_SIZE_IN_BYTES: usize = 200;
+        const BLOCK_SIZE_IN_BYTES: usize = 100;
         let file = NamedTempFile::new().expect("Failed to create temp file");
         let directory_path = file.path().parent().unwrap();
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();

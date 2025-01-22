@@ -107,10 +107,6 @@ mod tests {
         fn decode_from(buffer: Vec<u8>) -> Self {
             TestPage { buffer }
         }
-
-        fn buffer(&self) -> &[u8] {
-            &self.buffer
-        }
     }
 
     #[test]
@@ -138,7 +134,7 @@ mod tests {
         assert!(result.is_ok());
 
         let page = file_manager.read::<TestPage>(&block_id).unwrap();
-        assert_eq!(&page.buffer()[..write_buffer.len()], write_buffer);
+        assert_eq!(&page.buffer[..write_buffer.len()], write_buffer);
     }
 
     #[test]
@@ -154,7 +150,7 @@ mod tests {
         assert!(result.is_ok());
 
         let page = file_manager.read::<TestPage>(&block_id).unwrap();
-        assert_eq!(&page.buffer()[..write_buffer.len()], write_buffer);
+        assert_eq!(&page.buffer[..write_buffer.len()], write_buffer);
     }
 
     #[test]
