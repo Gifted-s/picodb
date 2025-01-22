@@ -82,8 +82,7 @@ mod tests {
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         let buffer = Buffer::new(&mut log_manager);
         assert_eq!(false, buffer.is_pinned());
@@ -97,8 +96,7 @@ mod tests {
         let log_file_name = format!("{}.log", buffer_file_name);
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u16(250);
@@ -132,8 +130,7 @@ mod tests {
         let log_file_name = format!("{}.log", buffer_file_name);
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u16(250);
@@ -163,8 +160,7 @@ mod tests {
         let log_file_name = format!("{}.log", buffer_file_name);
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u16(250);
@@ -195,8 +191,7 @@ mod tests {
         let log_file_name = format!("{}.log", buffer_file_name);
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         assert!(log_manager
             .file_manager()

@@ -93,8 +93,7 @@ mod tests {
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         assert!(log_manager
             .append(b"RocksDB is an LSM-based storage engine")
@@ -108,8 +107,7 @@ mod tests {
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         assert!(log_manager
             .append(b"RocksDB is an LSM-based storage engine")
@@ -130,8 +128,7 @@ mod tests {
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         assert!(log_manager
             .append(b"RocksDB is an LSM-based storage engine")
@@ -167,8 +164,7 @@ mod tests {
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE_IN_BYTES).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         assert!(log_manager
             .append(b"RocksDB is an LSM-based storage engine")
@@ -202,8 +198,7 @@ mod tests {
         let directory_path = file.path().parent().unwrap();
         let log_file_name = file.path().file_name().unwrap().to_str().unwrap();
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        let mut log_manager =
-            LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
 
         assert!(log_manager
             .append(b"RocksDB is an LSM-based storage engine")
