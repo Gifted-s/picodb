@@ -6,7 +6,7 @@ use std::io;
 use std::path::Path;
 
 pub(crate) struct LogManager<'a, PathType: AsRef<Path>> {
-    file_manager: &'a mut FileManager<PathType>,
+    file_manager: &'a FileManager<PathType>,
     log_file_name: String,
     log_page: LogPage,
     current_block_id: BlockId,
@@ -16,7 +16,7 @@ pub(crate) struct LogManager<'a, PathType: AsRef<Path>> {
 
 impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
     pub(crate) fn new(
-        file_manager: &'a mut FileManager<PathType>,
+        file_manager: &'a FileManager<PathType>,
         log_file_name: String,
     ) -> Result<LogManager<'a, PathType>, io::Error> {
         let number_of_blocks = file_manager.number_of_blocks(&log_file_name)?;
@@ -66,8 +66,8 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
         Ok(())
     }
 
-    pub(crate) fn file_manager(&mut self) -> &mut FileManager<PathType> {
-        &mut self.file_manager
+    pub(crate) fn file_manager(&self) -> &FileManager<PathType> {
+        &self.file_manager
     }
 
     fn force_flush(&mut self) -> Result<(), io::Error> {

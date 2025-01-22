@@ -6,14 +6,14 @@ use std::path::Path;
 use std::rc::Rc;
 
 pub(crate) struct BackwardLogIterator<'a, PathType: AsRef<Path>> {
-    file_manager: &'a mut FileManager<PathType>,
+    file_manager: &'a FileManager<PathType>,
     current_block_id: BlockId,
     record_iterator: BackwardRecordIterator,
 }
 
 impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
     pub(crate) fn new(
-        file_manager: &'a mut FileManager<PathType>,
+        file_manager: &'a FileManager<PathType>,
         current_block_id: BlockId,
     ) -> Result<BackwardLogIterator<'a, PathType>, io::Error> {
         let page = file_manager.read::<LogPage>(&current_block_id)?;
