@@ -66,6 +66,15 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "Destination slice is too small")]
+    fn attempt_to_encode_bytes_into_a_small_sized_buffer() {
+        let source = b"Rocks is LSM-based";
+        let mut destination = vec![0; 5];
+
+        let _ = BytesEncoderDecoder.encode(&source[..], &mut destination, 0);
+    }
+
+    #[test]
     fn encode_decode_bytes() {
         let source = b"Rocks is LSM-based";
         let mut destination = vec![0; 100];

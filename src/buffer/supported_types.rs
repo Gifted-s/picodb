@@ -102,7 +102,7 @@ impl Types {
 }
 
 #[cfg(test)]
-mod tests {
+mod types_tests {
     use crate::buffer::supported_types::{SupportedType, Types};
 
     #[test]
@@ -160,5 +160,46 @@ mod tests {
         types.add(SupportedType::TypeU8);
 
         assert_eq!(1, types.length());
+    }
+}
+
+#[cfg(test)]
+mod support_type_tests {
+    use byteorder::ByteOrder;
+    use crate::buffer::supported_types::SupportedType;
+    use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
+    use crate::encodex::EncoderDecoder;
+    use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
+
+    #[test]
+    fn end_offset_post_decode_for_u8() {
+        let mut buffer = vec![0; 100];
+        buffer[0] =  250;
+
+        assert_eq!(11, SupportedType::TypeU8.end_offset_post_decode(&buffer, 10));
+    }
+
+    #[test]
+    fn end_offset_post_decode_for_u16() {
+        let mut buffer = vec![0; 100];
+        byteorder::LittleEndian::write_u16(&mut buffer[0..2], 250);
+
+        assert_eq!(12, SupportedType::TypeU16.end_offset_post_decode(&buffer, 10));
+    }
+
+    #[test]
+    fn end_offset_post_decode_for_bytes() {
+        let mut buffer = vec![0; 100];
+        let _ = BytesEncoderDecoder.encode(b"Rocksdb", &mut buffer, 10);
+
+        assert!(SupportedType::TypeBytes.end_offset_post_decode(&buffer, 10) > 16);
+    }
+
+    #[test]
+    fn end_offset_post_decode_for_string() {
+        let mut buffer = vec![0; 100];
+        let _ = StringEncoderDecoder.encode(&String::from("Rocksdb"), &mut buffer, 10);
+
+        assert!(SupportedType::TypeString.end_offset_post_decode(&buffer, 10) > 16);
     }
 }
