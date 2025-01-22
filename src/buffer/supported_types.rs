@@ -31,9 +31,9 @@ impl From<u8> for SupportedType {
     }
 }
 
-impl Into<u8> for SupportedType {
-    fn into(self) -> u8 {
-        match self {
+impl From<SupportedType> for u8 {
+    fn from(val: SupportedType) -> Self {
+        match val {
             SupportedType::TypeU8 => 0,
             SupportedType::TypeU16 => 1,
             SupportedType::TypeBytes => 2,

@@ -13,7 +13,7 @@ pub(crate) struct PageEncoder<'a> {
 
 pub(crate) struct PageDecoder;
 
-impl<'a> PageEncoder<'a> {
+impl PageEncoder<'_> {
     pub(crate) fn encode(&mut self) {
         self.write_encoded_starting_offsets(&self.starting_offsets.encode());
         self.write_types(&self.types.encode());

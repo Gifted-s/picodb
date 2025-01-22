@@ -61,9 +61,9 @@ impl Buffer {
         log_manager: &mut LogManager<PathType>,
     ) -> Result<(), io::Error> {
         if self.transaction_number >= 0 && self.page.is_some() {
-            let _ = log_manager.flush(self.log_sequence_number)?;
+            log_manager.flush(self.log_sequence_number)?;
             log_manager.file_manager().write(
-                &self.block_id.as_ref().unwrap(),
+                self.block_id.as_ref().unwrap(),
                 self.page.as_mut().unwrap().finish(),
             )?;
             self.transaction_number = -1;
@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn buffer_is_not_pinned() {
         let buffer = Buffer::new();
-        assert_eq!(false, buffer.is_pinned());
+        assert!(!buffer.is_pinned());
     }
 
     #[test]
@@ -186,7 +186,7 @@ mod tests {
         buffer.pin();
         buffer.unpin();
 
-        assert_eq!(false, buffer.is_pinned());
+        assert!(!buffer.is_pinned());
         assert_eq!(0, buffer.pins);
     }
 

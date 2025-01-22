@@ -62,7 +62,7 @@ impl<'a, PathType: AsRef<Path>> BufferManager<'a, PathType> {
 
     fn unpin(&mut self, block_id: &BlockId) {
         for buffer in self.buffer_pool.iter_mut() {
-            if buffer.has_block_id(&block_id) {
+            if buffer.has_block_id(block_id) {
                 buffer.unpin();
                 if !buffer.is_pinned() {
                     self.available_buffers += 1;
@@ -82,7 +82,7 @@ impl<'a, PathType: AsRef<Path>> BufferManager<'a, PathType> {
                 return Ok(buffer);
             }
             if !buffer.is_pinned() {
-                buffer.assign_to_block(block_id, &mut self.log_manager)?;
+                buffer.assign_to_block(block_id, self.log_manager)?;
                 self.available_buffers -= 1;
                 buffer.pin();
                 return Ok(buffer);
@@ -238,9 +238,8 @@ mod buffer_pin_error_tests {
 
     #[test]
     fn error_is_an_io_error() {
-        assert_eq!(
-            false,
-            BufferPinError::IO(Error::new(ErrorKind::NotFound, "test error"))
+        assert!(
+            !BufferPinError::IO(Error::new(ErrorKind::NotFound, "test error"))
                 .is_unavailable_error()
         );
     }

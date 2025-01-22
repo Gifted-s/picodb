@@ -50,7 +50,7 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
             self.log_page = LogPage::new(self.file_manager.block_size);
             assert!(self.log_page.add(buffer));
         }
-        self.latest_log_sequence_number = self.latest_log_sequence_number + 1;
+        self.latest_log_sequence_number += 1;
         Ok(())
     }
 
@@ -67,12 +67,12 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
     }
 
     pub(crate) fn file_manager(&self) -> &FileManager<PathType> {
-        &self.file_manager
+        self.file_manager
     }
 
     fn force_flush(&mut self) -> Result<(), io::Error> {
         self.file_manager
-            .write(&self.current_block_id, &self.log_page.finish())?;
+            .write(&self.current_block_id, self.log_page.finish())?;
         self.last_saved_log_sequence_number = self.latest_log_sequence_number;
         Ok(())
     }

@@ -80,7 +80,7 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
                 .read(true)
                 .write(true)
                 .create(true)
-                .open(&path)?;
+                .open(path)?;
 
             open_files.insert(path.to_string(), file);
         }
@@ -188,7 +188,7 @@ mod tests {
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        file_manager.append_empty_block(&file_name).unwrap();
+        file_manager.append_empty_block(file_name).unwrap();
 
         let block_id = BlockId::new(file_name, 0);
 
@@ -203,7 +203,7 @@ mod tests {
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
         let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
-        file_manager.append_empty_block(&file_name).unwrap();
+        file_manager.append_empty_block(file_name).unwrap();
 
         let mut buffer = vec![0; BLOCK_SIZE];
         let content = b"PebbleDB is an LSM-based storage engine.";
@@ -214,7 +214,7 @@ mod tests {
         let result = file_manager.write(&block_id, &buffer);
         assert!(result.is_ok());
 
-        let new_block_id = file_manager.append_empty_block(&file_name).unwrap();
+        let new_block_id = file_manager.append_empty_block(file_name).unwrap();
         assert_eq!(1, new_block_id.block_number);
     }
 }

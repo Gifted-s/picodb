@@ -121,7 +121,7 @@ struct PageEncoder<'a> {
 
 struct PageDecoder;
 
-impl<'a> PageEncoder<'a> {
+impl PageEncoder<'_> {
     fn encode(&mut self) {
         self.write_encoded_starting_offsets(&self.starting_offsets.encode());
         self.write_number_of_starting_offsets();
@@ -182,7 +182,7 @@ impl PageDecoder {
 
     fn current_write_offset(buffer: &[u8], starting_offsets: &StartingOffsets) -> EndOffset {
         let last_starting_offset = starting_offsets.last_offset().unwrap();
-        let (_, end_offset) = BytesEncoderDecoder.decode(&buffer, *last_starting_offset as usize);
+        let (_, end_offset) = BytesEncoderDecoder.decode(buffer, *last_starting_offset as usize);
         end_offset
     }
 }
@@ -196,34 +196,29 @@ mod tests {
     #[test]
     fn attempt_to_add_a_record_to_a_page_with_insufficient_size() {
         let mut page = LogPage::new(30);
-        assert_eq!(
-            false,
-            page.add(b"RocksDB is an LSM-based key/value storage engine")
+        assert!(
+            !page.add(b"RocksDB is an LSM-based key/value storage engine")
         );
     }
 
     #[test]
     fn attempt_to_add_a_couple_of_records_in_a_page_with_size_sufficient_for_only_one_record() {
         let mut page = LogPage::new(60);
-        assert_eq!(
-            true,
+        assert!(
             page.add(b"RocksDB is an LSM-based key/value storage engine")
         );
-        assert_eq!(
-            false,
-            page.add(b"RocksDB is an LSM-based key/value storage engine")
+        assert!(
+            !page.add(b"RocksDB is an LSM-based key/value storage engine")
         );
     }
 
     #[test]
     fn attempt_to_add_a_couple_of_records_successfully_in_a_page_with_just_enough_size() {
         let mut page = LogPage::new(110);
-        assert_eq!(
-            true,
+        assert!(
             page.add(b"RocksDB is an LSM-based key/value storage engine")
         );
-        assert_eq!(
-            true,
+        assert!(
             page.add(b"RocksDB is an LSM-based key/value storage engine")
         );
     }

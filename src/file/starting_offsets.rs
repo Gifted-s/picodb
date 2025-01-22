@@ -15,7 +15,7 @@ impl StartingOffsets {
         let mut starting_offsets = Self::new();
         buffer
             .chunks_exact(SIZE_OF_OFFSET)
-            .map(|chunk| byteorder::LittleEndian::read_u32(chunk))
+            .map(byteorder::LittleEndian::read_u32)
             .for_each(|offset| starting_offsets.offsets.push(offset));
 
         starting_offsets

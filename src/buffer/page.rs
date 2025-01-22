@@ -181,7 +181,7 @@ impl BufferPage {
         self.starting_offsets
             .add_offset(self.current_write_offset as u32);
         self.types.add(field_type);
-        self.current_write_offset += bytes_needed_for_encoding as usize;
+        self.current_write_offset += bytes_needed_for_encoding;
     }
 
     fn mutate_field<F: Fn(&mut [u8], usize) -> BytesNeededForEncoding>(
