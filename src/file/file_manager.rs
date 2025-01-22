@@ -1,5 +1,6 @@
 use crate::file::block_id::BlockId;
 use crate::page::Page;
+use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Write};
@@ -9,7 +10,7 @@ use std::{fs, io};
 pub(crate) struct FileManager<PathType: AsRef<Path>> {
     directory: PathType,
     pub(crate) block_size: usize,
-    open_files: HashMap<String, File>,
+    open_files: RefCell<HashMap<String, File>>,
 }
 
 impl<PathType: AsRef<Path>> FileManager<PathType> {
@@ -21,11 +22,11 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         Ok(FileManager {
             directory,
             block_size,
-            open_files: HashMap::new(),
+            open_files: RefCell::new(HashMap::new()),
         })
     }
 
-    pub(crate) fn read<T: Page>(&mut self, block_id: &BlockId) -> Result<T, io::Error> {
+    pub(crate) fn read<T: Page>(&self, block_id: &BlockId) -> Result<T, io::Error> {
         let mut read_buffer = vec![0; self.block_size];
         self.seek_and_run(block_id, |file| {
             file.read(&mut read_buffer).map(|_number_of_bytes_read| ())
@@ -33,14 +34,14 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         Ok(T::decode_from(read_buffer))
     }
 
-    pub(crate) fn write(&mut self, block_id: &BlockId, data: &[u8]) -> Result<(), io::Error> {
+    pub(crate) fn write(&self, block_id: &BlockId, data: &[u8]) -> Result<(), io::Error> {
         self.seek_and_run(block_id, |file| {
             file.write_all(data)?;
             file.sync_data()
         })
     }
 
-    pub(crate) fn append_empty_block(&mut self, file_name: &str) -> Result<BlockId, io::Error> {
+    pub(crate) fn append_empty_block(&self, file_name: &str) -> Result<BlockId, io::Error> {
         let block_id = BlockId::new(file_name, self.number_of_blocks(file_name)?);
         let block_size = self.block_size;
 
@@ -52,14 +53,14 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         Ok(block_id)
     }
 
-    pub(crate) fn number_of_blocks(&mut self, file_name: &str) -> Result<usize, io::Error> {
+    pub(crate) fn number_of_blocks(&self, file_name: &str) -> Result<usize, io::Error> {
         let file = self.get_or_create(file_name)?;
         let metadata = file.metadata()?;
         Ok(metadata.len() as usize / self.block_size) //TODO: validate
     }
 
     fn seek_and_run<Block: FnMut(&mut File) -> Result<(), io::Error>>(
-        &mut self,
+        &self,
         block_id: &BlockId,
         mut block: Block,
     ) -> Result<(), io::Error> {
@@ -69,19 +70,23 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         block(&mut file)
     }
 
-    fn get_or_create(&mut self, file_name: &str) -> Result<&mut File, io::Error> {
+    fn get_or_create(&self, file_name: &str) -> Result<RefMut<'_, File>, io::Error> {
         let path = self.directory.as_ref().join(Path::new(&file_name));
         let path = path.to_str().unwrap();
-        if !self.open_files.contains_key(path) {
+
+        let mut open_files = self.open_files.borrow_mut();
+        if !open_files.contains_key(path) {
             let file = File::options()
                 .read(true)
                 .write(true)
                 .create(true)
-                .open(path)?;
+                .open(&path)?;
 
-            self.open_files.insert(path.to_string(), file);
+            open_files.insert(path.to_string(), file);
         }
-        Ok(self.open_files.get_mut(path).unwrap())
+        Ok(RefMut::map(open_files, |files| {
+            files.get_mut(path).unwrap()
+        }))
     }
 }
 
@@ -114,7 +119,7 @@ mod tests {
         let directory_path = file.path().parent().unwrap();
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
-        let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
         let block_id = BlockId::new(file_name, 0);
         let result = file_manager.write(&block_id, b"RocksDB is an LSM-based storage engine");
         assert!(result.is_ok());
@@ -126,7 +131,7 @@ mod tests {
         let directory_path = file.path().parent().unwrap();
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
-        let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
         let write_buffer = b"RocksDB is an LSM-based storage engine";
         let block_id = BlockId::new(file_name, 0);
         let result = file_manager.write(&block_id, write_buffer);
@@ -142,7 +147,7 @@ mod tests {
         let directory_path = file.path().parent().unwrap();
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
-        let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
         let write_buffer = b"PebbleDB is an LSM-based storage engine";
         let block_id = BlockId::new(file_name, 5);
         let result = file_manager.write(&block_id, write_buffer);
@@ -158,7 +163,7 @@ mod tests {
         let directory_path = file.path().parent().unwrap();
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
-        let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
         let number_of_blocks = file_manager.number_of_blocks(file_name).unwrap();
 
         assert_eq!(0, number_of_blocks);
@@ -170,7 +175,7 @@ mod tests {
         let directory_path = file.path().parent().unwrap();
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
-        let mut file_manager = FileManager::new(directory_path, 40).unwrap();
+        let file_manager = FileManager::new(directory_path, 40).unwrap();
         let write_buffer = b"PebbleDB is an LSM-based storage engine.";
         let block_id = BlockId::new(file_name, 0);
         let result = file_manager.write(&block_id, write_buffer);
@@ -186,7 +191,7 @@ mod tests {
         let directory_path = file.path().parent().unwrap();
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
-        let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
         file_manager.append_empty_block(&file_name).unwrap();
 
         let block_id = BlockId::new(file_name, 0);
@@ -201,7 +206,7 @@ mod tests {
         let directory_path = file.path().parent().unwrap();
         let file_name = file.path().file_name().unwrap().to_str().unwrap();
 
-        let mut file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
         file_manager.append_empty_block(&file_name).unwrap();
 
         let mut buffer = vec![0; BLOCK_SIZE];
