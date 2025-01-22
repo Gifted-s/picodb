@@ -93,7 +93,7 @@ impl<'a, PathType: AsRef<Path>> BufferManager<'a, PathType> {
 }
 
 #[cfg(test)]
-mod tests {
+mod buffer_manager_tests {
     use crate::buffer::buffer_manager::BufferManager;
     use crate::file::block_id::BlockId;
     use crate::file::file_manager::FileManager;
@@ -138,7 +138,50 @@ mod tests {
     }
 
     #[test]
-    fn pin_a_buffer() {
+    fn pin_an_unpinned_buffer() {
+        let file = NamedTempFile::new().expect("Failed to create temp file");
+        let directory_path = file.path().parent().unwrap();
+        let buffer_file_name = file.path().file_name().unwrap().to_str().unwrap();
+        let log_file_name = format!("{}.log", buffer_file_name);
+
+        let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+
+        let mut buffer_manager = BufferManager::new(1, &mut log_manager);
+        let buffer = buffer_manager
+            .pin(BlockId::new(buffer_file_name, 0))
+            .unwrap();
+
+        assert!(buffer.is_pinned());
+        assert_eq!(0, buffer_manager.available_buffers);
+    }
+
+    #[test]
+    fn pin_a_buffer_which_already_contains_the_given_block_id() {
+        let file = NamedTempFile::new().expect("Failed to create temp file");
+        let directory_path = file.path().parent().unwrap();
+        let buffer_file_name = file.path().file_name().unwrap().to_str().unwrap();
+        let log_file_name = format!("{}.log", buffer_file_name);
+
+        let file_manager = FileManager::new(directory_path, BLOCK_SIZE).unwrap();
+        let mut log_manager = LogManager::new(&file_manager, log_file_name.to_string()).unwrap();
+
+        let mut buffer_manager = BufferManager::new(1, &mut log_manager);
+        let _ = buffer_manager
+            .pin(BlockId::new(buffer_file_name, 0))
+            .unwrap();
+
+        buffer_manager.unpin(&BlockId::new(buffer_file_name, 0));
+
+        let _ = buffer_manager
+            .pin(BlockId::new(buffer_file_name, 0))
+            .unwrap();
+
+        assert_eq!(0, buffer_manager.available_buffers);
+    }
+
+    #[test]
+    fn pin_a_buffer_and_write_to_the_page() {
         let file = NamedTempFile::new().expect("Failed to create temp file");
         let directory_path = file.path().parent().unwrap();
         let buffer_file_name = file.path().file_name().unwrap().to_str().unwrap();
@@ -180,5 +223,35 @@ mod tests {
             reassigned_buffer_page.get_string(0)
         );
         assert_eq!(250, reassigned_buffer_page.get_u16(1).unwrap());
+    }
+}
+
+#[cfg(test)]
+mod buffer_pin_error_tests {
+    use crate::buffer::buffer_manager::BufferPinError;
+    use std::io::{Error, ErrorKind};
+
+    #[test]
+    fn error_is_buffer_unavailable() {
+        assert!(BufferPinError::UNAVAILABLE.is_unavailable_error());
+    }
+
+    #[test]
+    fn error_is_an_io_error() {
+        assert_eq!(
+            false,
+            BufferPinError::IO(Error::new(ErrorKind::NotFound, "test error"))
+                .is_unavailable_error()
+        );
+    }
+
+    #[test]
+    fn buffer_pin_error_from_io_error() {
+        let io_error = Error::new(ErrorKind::NotFound, "test error");
+        let buffer_pin_error = BufferPinError::from(io_error);
+        match buffer_pin_error {
+            BufferPinError::IO(err) => assert_eq!(ErrorKind::NotFound, err.kind()),
+            BufferPinError::UNAVAILABLE => panic!("unexpected error"),
+        }
     }
 }
