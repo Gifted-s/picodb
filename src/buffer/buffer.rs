@@ -4,7 +4,7 @@ use crate::log::log_manager::LogManager;
 use std::io;
 use std::path::Path;
 
-struct Buffer {
+pub(crate) struct Buffer {
     page: Option<BufferPage>,
     block_id: Option<BlockId>,
     pins: isize,
@@ -13,7 +13,7 @@ struct Buffer {
 }
 
 impl Buffer {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Buffer {
             page: None,
             block_id: None,
@@ -23,7 +23,7 @@ impl Buffer {
         }
     }
 
-    fn assign_to_block<PathType: AsRef<Path>>(
+    pub(crate) fn assign_to_block<PathType: AsRef<Path>>(
         &mut self,
         block_id: BlockId,
         log_manager: &mut LogManager<PathType>,
@@ -35,24 +35,28 @@ impl Buffer {
         Ok(())
     }
 
-    fn set_modified(&mut self, transaction_number: isize, log_sequence_number: usize) {
+    pub(crate) fn set_modified(&mut self, transaction_number: isize, log_sequence_number: usize) {
         self.transaction_number = transaction_number;
         self.log_sequence_number = log_sequence_number;
     }
 
-    fn pin(&mut self) {
+    pub(crate) fn has_block_id(&self, block_id: &BlockId) -> bool {
+        self.block_id.as_ref() == Some(block_id)
+    }
+
+    pub(crate) fn pin(&mut self) {
         self.pins += 1;
     }
 
-    fn unpin(&mut self) {
+    pub(crate) fn unpin(&mut self) {
         self.pins -= 1;
     }
 
-    fn is_pinned(&self) -> bool {
+    pub(crate) fn is_pinned(&self) -> bool {
         self.pins > 0
     }
 
-    fn flush<PathType: AsRef<Path>>(
+    pub(crate) fn flush<PathType: AsRef<Path>>(
         &mut self,
         log_manager: &mut LogManager<PathType>,
     ) -> Result<(), io::Error> {
@@ -65,6 +69,11 @@ impl Buffer {
             self.transaction_number = -1;
         }
         Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn page(&mut self) -> Option<&mut BufferPage> {
+        self.page.as_mut()
     }
 }
 
