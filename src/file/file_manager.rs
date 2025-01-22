@@ -1,4 +1,5 @@
 use crate::file::block_id::BlockId;
+use crate::page::Page;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Write};
@@ -24,14 +25,12 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
         })
     }
 
-    pub(crate) fn read_into(
-        &mut self,
-        buffer: &mut [u8],
-        block_id: &BlockId,
-    ) -> Result<(), io::Error> {
+    pub(crate) fn read_into<T: Page>(&mut self, block_id: &BlockId) -> Result<T, io::Error> {
+        let mut read_buffer = vec![0; self.block_size];
         self.seek_and_run(block_id, |file| {
-            file.read_exact(buffer).map(|_number_of_bytes_read| ())
-        })
+            file.read(&mut read_buffer).map(|_number_of_bytes_read| ())
+        })?;
+        Ok(T::decode_from(read_buffer))
     }
 
     pub(crate) fn write(&mut self, block_id: &BlockId, data: &[u8]) -> Result<(), io::Error> {
@@ -90,9 +89,24 @@ impl<PathType: AsRef<Path>> FileManager<PathType> {
 mod tests {
     use crate::file::block_id::BlockId;
     use crate::file::file_manager::FileManager;
+    use crate::page::Page;
     use tempfile::NamedTempFile;
 
     const BLOCK_SIZE: usize = 4096;
+
+    struct TestPage {
+        buffer: Vec<u8>,
+    }
+
+    impl Page for TestPage {
+        fn decode_from(buffer: Vec<u8>) -> Self {
+            TestPage { buffer }
+        }
+
+        fn buffer(&self) -> &[u8] {
+            &self.buffer
+        }
+    }
 
     #[test]
     fn write_content_at_block_zero() {
@@ -118,10 +132,8 @@ mod tests {
         let result = file_manager.write(&block_id, write_buffer);
         assert!(result.is_ok());
 
-        let mut read_buffer = vec![0; write_buffer.len()];
-        file_manager.read_into(&mut read_buffer, &block_id).unwrap();
-
-        assert_eq!(read_buffer, write_buffer);
+        let page = file_manager.read_into::<TestPage>(&block_id).unwrap();
+        assert_eq!(&page.buffer()[..write_buffer.len()], write_buffer);
     }
 
     #[test]
@@ -136,10 +148,8 @@ mod tests {
         let result = file_manager.write(&block_id, write_buffer);
         assert!(result.is_ok());
 
-        let mut read_buffer = vec![0; write_buffer.len()];
-        file_manager.read_into(&mut read_buffer, &block_id).unwrap();
-
-        assert_eq!(read_buffer, write_buffer);
+        let page = file_manager.read_into::<TestPage>(&block_id).unwrap();
+        assert_eq!(&page.buffer()[..write_buffer.len()], write_buffer);
     }
 
     #[test]
@@ -181,10 +191,8 @@ mod tests {
 
         let block_id = BlockId::new(file_name, 0);
 
-        let mut read_buffer = vec![0; BLOCK_SIZE];
-        file_manager.read_into(&mut read_buffer, &block_id).unwrap();
-
-        assert_eq!(vec![0; BLOCK_SIZE], read_buffer);
+        let page = file_manager.read_into::<TestPage>(&block_id).unwrap();
+        assert_eq!(vec![0; BLOCK_SIZE], page.buffer);
     }
 
     #[test]

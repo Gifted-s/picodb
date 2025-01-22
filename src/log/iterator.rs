@@ -1,7 +1,6 @@
 use crate::file::block_id::BlockId;
 use crate::file::file_manager::FileManager;
 use crate::log::page::{BackwardRecordIterator, LogPage};
-use crate::page::Page;
 use std::io;
 use std::path::Path;
 use std::rc::Rc;
@@ -17,13 +16,12 @@ impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
         file_manager: &'a mut FileManager<PathType>,
         current_block_id: BlockId,
     ) -> Result<BackwardLogIterator<'a, PathType>, io::Error> {
-        let mut buffer = vec![0; file_manager.block_size];
-        file_manager.read_into(&mut buffer, &current_block_id)?;
+        let page = file_manager.read_into::<LogPage>(&current_block_id)?;
 
         Ok(BackwardLogIterator {
             file_manager,
             current_block_id,
-            record_iterator: BackwardRecordIterator::new(Rc::new(LogPage::decode_from(buffer))),
+            record_iterator: BackwardRecordIterator::new(Rc::new(page)),
         })
     }
 
@@ -34,13 +32,12 @@ impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
         }
         if self.current_block_id.block_number > 0 {
             self.current_block_id = self.current_block_id.previous().unwrap();
-            let mut buffer = vec![0; self.file_manager.block_size];
-            self.file_manager
-                .read_into(&mut buffer, &self.current_block_id)
+            let page = self
+                .file_manager
+                .read_into::<LogPage>(&self.current_block_id)
                 .unwrap();
 
-            self.record_iterator =
-                BackwardRecordIterator::new(Rc::new(LogPage::decode_from(buffer)));
+            self.record_iterator = BackwardRecordIterator::new(Rc::new(page));
             return self.record_iterator.record().map(Vec::from);
         }
         None

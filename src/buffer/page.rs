@@ -22,6 +22,10 @@ impl crate::page::Page for BufferPage {
         }
         PageDecoder::decode_page(buffer)
     }
+
+    fn buffer(&self) -> &[u8] {
+        &self.buffer
+    }
 }
 
 impl BufferPage {
@@ -205,8 +209,8 @@ impl BufferPage {
 #[cfg(test)]
 mod tests {
     use crate::buffer::page::BufferPage;
-    use std::borrow::Cow;
     use crate::page::Page;
+    use std::borrow::Cow;
 
     const BLOCK_SIZE: usize = 4096;
 

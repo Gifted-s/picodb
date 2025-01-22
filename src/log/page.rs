@@ -49,6 +49,10 @@ impl crate::page::Page for LogPage {
         }
         PageDecoder::decode_page(buffer)
     }
+
+    fn buffer(&self) -> &[u8] {
+        &self.buffer
+    }
 }
 
 impl LogPage {

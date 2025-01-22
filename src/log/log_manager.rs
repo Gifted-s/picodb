@@ -2,7 +2,6 @@ use crate::file::block_id::BlockId;
 use crate::file::file_manager::FileManager;
 use crate::log::iterator::BackwardLogIterator;
 use crate::log::page::LogPage;
-use crate::page::Page;
 use std::io;
 use std::path::Path;
 
@@ -28,9 +27,8 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
             ),
             _ => {
                 let block_id = BlockId::new(&log_file_name, number_of_blocks - 1);
-                let mut buffer = vec![0; file_manager.block_size];
-                file_manager.read_into(&mut buffer, &block_id)?;
-                (block_id, LogPage::decode_from(buffer))
+                let page = file_manager.read_into::<LogPage>(&block_id)?;
+                (block_id, page)
             }
         };
         Ok(LogManager {
