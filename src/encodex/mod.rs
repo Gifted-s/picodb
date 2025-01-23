@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 pub(crate) mod bytes_encoder_decoder;
-pub(crate) mod string_encoder_decoder;
+pub(crate) mod str_encoder_decoder;
 pub(crate) mod u16_encoder_decoder;
 pub(crate) mod u8_encoder_decoder;
 

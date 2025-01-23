@@ -2,7 +2,7 @@ use crate::assert_borrowed_type;
 use crate::buffer::page_encoder_decoder::{PageDecoder, PageEncoder};
 use crate::buffer::supported_types::{SupportedType, Types};
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
-use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
+use crate::encodex::str_encoder_decoder::StrEncoderDecoder;
 use crate::encodex::u16_encoder_decoder::U16EncoderDecoder;
 use crate::encodex::u8_encoder_decoder::U8EncoderDecoder;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder};
@@ -95,7 +95,7 @@ impl BufferPage {
     pub(crate) fn add_string(&mut self, value: &str) {
         self.add_field(
             |destination, current_write_offset| {
-                StringEncoderDecoder.encode(value, destination, current_write_offset)
+                StrEncoderDecoder.encode(value, destination, current_write_offset)
             },
             SupportedType::TypeString,
         )
@@ -106,7 +106,7 @@ impl BufferPage {
         self.assert_field_type(index, SupportedType::TypeString);
         self.mutate_field(
             |destination, current_write_offset| {
-                StringEncoderDecoder.encode(value, destination, current_write_offset)
+                StrEncoderDecoder.encode(value, destination, current_write_offset)
             },
             index,
         );
@@ -150,7 +150,7 @@ impl BufferPage {
     pub(crate) fn get_string(&self, index: usize) -> Option<&str> {
         self.assert_field_type(index, SupportedType::TypeString);
         let str = self.get(
-            |starting_offset| StringEncoderDecoder.decode(&self.buffer, starting_offset).0,
+            |starting_offset| StrEncoderDecoder.decode(&self.buffer, starting_offset).0,
             index,
         )?;
         Some(assert_borrowed_type(str))

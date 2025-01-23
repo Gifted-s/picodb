@@ -1,5 +1,5 @@
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
-use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
+use crate::encodex::str_encoder_decoder::StrEncoderDecoder;
 use crate::encodex::u16_encoder_decoder::U16EncoderDecoder;
 use crate::encodex::u8_encoder_decoder::U8EncoderDecoder;
 use crate::encodex::{EncoderDecoder, EndOffset};
@@ -48,7 +48,7 @@ impl SupportedType {
             SupportedType::TypeU8 => U8EncoderDecoder.decode(buffer, from_offset).1,
             SupportedType::TypeU16 => U16EncoderDecoder.decode(buffer, from_offset).1,
             SupportedType::TypeBytes => BytesEncoderDecoder.decode(buffer, from_offset).1,
-            SupportedType::TypeString => StringEncoderDecoder.decode(buffer, from_offset).1,
+            SupportedType::TypeString => StrEncoderDecoder.decode(buffer, from_offset).1,
         }
     }
 }
@@ -167,7 +167,7 @@ mod types_tests {
 mod support_type_tests {
     use crate::buffer::supported_types::SupportedType;
     use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
-    use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
+    use crate::encodex::str_encoder_decoder::StrEncoderDecoder;
     use crate::encodex::EncoderDecoder;
     use byteorder::ByteOrder;
 
@@ -204,7 +204,7 @@ mod support_type_tests {
     #[test]
     fn end_offset_post_decode_for_string() {
         let mut buffer = vec![0; 100];
-        let _ = StringEncoderDecoder.encode(&String::from("Rocksdb"), &mut buffer, 10);
+        let _ = StrEncoderDecoder.encode(&String::from("Rocksdb"), &mut buffer, 10);
 
         assert!(SupportedType::TypeString.end_offset_post_decode(&buffer, 10) > 16);
     }

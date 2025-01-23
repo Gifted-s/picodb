@@ -3,9 +3,9 @@ use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder, EndOffset};
 use std::borrow::Cow;
 
-pub(crate) struct StringEncoderDecoder;
+pub(crate) struct StrEncoderDecoder;
 
-impl EncoderDecoder<str> for StringEncoderDecoder {
+impl EncoderDecoder<str> for StrEncoderDecoder {
     fn bytes_needed_for_encoding(&self, source: &str) -> BytesNeededForEncoding {
         BytesEncoderDecoder.bytes_needed_for_encoding(source.as_bytes())
     }
@@ -32,7 +32,7 @@ impl EncoderDecoder<str> for StringEncoderDecoder {
 #[cfg(test)]
 mod tests {
     use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
-    use crate::encodex::string_encoder_decoder::StringEncoderDecoder;
+    use crate::encodex::str_encoder_decoder::StrEncoderDecoder;
     use crate::encodex::EncoderDecoder;
 
     #[test]
@@ -42,7 +42,7 @@ mod tests {
 
         assert_eq!(
             source_length + BytesEncoderDecoder::RESERVED_SIZE_FOR_BYTE_SLICE,
-            StringEncoderDecoder.bytes_needed_for_encoding(&source)
+            StrEncoderDecoder.bytes_needed_for_encoding(&source)
         );
     }
 
@@ -52,10 +52,10 @@ mod tests {
         let mut destination = vec![0; 100];
 
         let number_of_bytes_for_encoding =
-            StringEncoderDecoder.encode(&source, &mut destination, 0);
+            StrEncoderDecoder.encode(&source, &mut destination, 0);
 
         let (decoded, _) =
-            StringEncoderDecoder.decode(&destination[..number_of_bytes_for_encoding], 0);
+            StrEncoderDecoder.decode(&destination[..number_of_bytes_for_encoding], 0);
 
         assert_eq!(decoded.as_bytes(), source.as_bytes());
     }
@@ -64,9 +64,9 @@ mod tests {
     fn encode_decode_string_at_a_different_offset() {
         let source = String::from("Rocks is LSM-based");
         let mut destination = vec![0; 100];
-        let _ = StringEncoderDecoder.encode(&source, &mut destination, 10);
+        let _ = StrEncoderDecoder.encode(&source, &mut destination, 10);
 
-        let (decoded, _) = StringEncoderDecoder.decode(&destination[..], 10);
+        let (decoded, _) = StrEncoderDecoder.decode(&destination[..], 10);
 
         assert_eq!(decoded.as_bytes(), source.as_bytes());
     }
