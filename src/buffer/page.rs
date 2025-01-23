@@ -92,21 +92,21 @@ impl BufferPage {
         );
     }
 
-    pub(crate) fn add_string(&mut self, value: String) {
+    pub(crate) fn add_string(&mut self, value: &str) {
         self.add_field(
             |destination, current_write_offset| {
-                StringEncoderDecoder.encode(&value, destination, current_write_offset)
+                StringEncoderDecoder.encode(value, destination, current_write_offset)
             },
             SupportedType::TypeString,
         )
     }
 
     //TODO: What if the new value does not match the old size
-    pub(crate) fn mutate_string(&mut self, value: String, index: usize) {
+    pub(crate) fn mutate_string(&mut self, value: &str, index: usize) {
         self.assert_field_type(index, SupportedType::TypeString);
         self.mutate_field(
             |destination, current_write_offset| {
-                StringEncoderDecoder.encode(&value, destination, current_write_offset)
+                StringEncoderDecoder.encode(value, destination, current_write_offset)
             },
             index,
         );
@@ -247,7 +247,7 @@ mod tests {
     fn add_a_few_fields_and_get_the_values() {
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(250);
-        page.add_string(String::from("PebbleDB is an LSM-based storage engine"));
+        page.add_string("PebbleDB is an LSM-based storage engine");
         page.add_bytes(b"RocksDB is an LSM-based storage engine".to_vec());
 
         assert_eq!(Some(250), page.get_u8(0));
@@ -284,7 +284,7 @@ mod tests {
     fn decode_a_page_with_few_fields() {
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(250);
-        page.add_string(String::from("PebbleDB is an LSM-based storage engine"));
+        page.add_string("PebbleDB is an LSM-based storage engine");
         page.add_bytes(b"RocksDB is an LSM-based storage engine".to_vec());
         page.add_u16(500);
 
@@ -333,8 +333,8 @@ mod tests {
     #[test]
     fn mutate_string() {
         let mut page = BufferPage::new(BLOCK_SIZE);
-        page.add_string(String::from("Bolt-DB"));
-        page.mutate_string(String::from("RocksDB"), 0);
+        page.add_string("Bolt-DB");
+        page.mutate_string("RocksDB", 0);
 
         assert_eq!(Some("RocksDB"), page.get_string(0));
     }
@@ -342,19 +342,14 @@ mod tests {
     #[test]
     fn add_fields_and_then_mutate_those_fields_in_the_decoded_page() {
         let mut page = BufferPage::new(BLOCK_SIZE);
-        page.add_string(String::from(
-            "PebbleDB is an LSM-based key/value storage engine",
-        ));
+        page.add_string("PebbleDB is an LSM-based key/value storage engine");
         page.add_u8(80);
         page.add_u16(160);
 
         let encoded = page.finish();
         let mut decoded = BufferPage::decode_from(encoded.to_vec());
 
-        decoded.mutate_string(
-            String::from("Rocks-DB is an LSM-based key/value storage engine"),
-            0,
-        );
+        decoded.mutate_string("Rocks-DB is an LSM-based key/value storage engine", 0);
         decoded.mutate_u8(160, 1);
         decoded.mutate_u16(320, 2);
 
@@ -369,16 +364,14 @@ mod tests {
     #[test]
     fn add_fields_in_the_decoded_page() {
         let mut page = BufferPage::new(BLOCK_SIZE);
-        page.add_string(String::from(
-            "PebbleDB is an LSM-based key/value storage engine",
-        ));
+        page.add_string("PebbleDB is an LSM-based key/value storage engine");
         page.add_u8(80);
         page.add_u16(160);
 
         let encoded = page.finish();
         let mut decoded = BufferPage::decode_from(encoded.to_vec());
 
-        decoded.add_string(String::from("BoltDB"));
+        decoded.add_string("BoltDB");
 
         assert_eq!(
             Some("PebbleDB is an LSM-based key/value storage engine"),

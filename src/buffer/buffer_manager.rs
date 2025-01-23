@@ -195,7 +195,7 @@ mod buffer_manager_tests {
             .unwrap();
 
         let page = buffer.page().unwrap();
-        page.add_string(String::from("RocksDB is an LSM based storage engine"));
+        page.add_string("RocksDB is an LSM based storage engine");
         page.add_u16(250);
 
         buffer.set_modified(10, 100);

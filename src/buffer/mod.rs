@@ -111,7 +111,7 @@ mod tests {
 
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u16(250);
-        page.add_string(String::from("BoltDB is a B+Tree based storage engine"));
+        page.add_string("BoltDB is a B+Tree based storage engine");
 
         assert!(log_manager
             .file_manager()
@@ -143,7 +143,7 @@ mod tests {
 
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u16(250);
-        page.add_string(String::from("BoltDB is a B+Tree based storage engine"));
+        page.add_string("BoltDB is a B+Tree based storage engine");
 
         assert!(log_manager
             .file_manager()
@@ -173,7 +173,7 @@ mod tests {
 
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u16(250);
-        page.add_string(String::from("BoltDB is a B+Tree based storage engine"));
+        page.add_string("BoltDB is a B+Tree based storage engine");
 
         assert!(log_manager
             .file_manager()
@@ -214,7 +214,7 @@ mod tests {
 
         let page = buffer.page.as_mut().unwrap();
         page.add_u16(250);
-        page.add_string(String::from("BoltDB is a B+Tree based storage engine"));
+        page.add_string("BoltDB is a B+Tree based storage engine");
 
         let any_transaction_number = 10;
         let any_log_sequence_number = 100;
