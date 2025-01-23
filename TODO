@@ -1,5 +1,3 @@
-- go through the entire code
-- all tests
-- finish log/ package
-    - log_manager
-    - log_iterator
+1. Re-look at the code
+2. remove all unwraps in the code
+3. Implement iterator in log/
