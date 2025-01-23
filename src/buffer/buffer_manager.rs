@@ -9,12 +9,12 @@ use std::path::Path;
 #[derive(Debug)]
 enum BufferPinError {
     IO(io::Error),
-    UNAVAILABLE,
+    Unavailable,
 }
 
 impl BufferPinError {
     fn is_unavailable_error(&self) -> bool {
-        if let BufferPinError::UNAVAILABLE = self {
+        if let BufferPinError::Unavailable = self {
             return true;
         }
         false
@@ -31,7 +31,7 @@ impl Display for BufferPinError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             BufferPinError::IO(err) => write!(f, "Buffer I/O error: {}", err),
-            BufferPinError::UNAVAILABLE => write!(f, "Buffer is unavailable"),
+            BufferPinError::Unavailable => write!(f, "Buffer is unavailable"),
         }
     }
 }
@@ -88,7 +88,7 @@ impl<'a, PathType: AsRef<Path>> BufferManager<'a, PathType> {
                 return Ok(buffer);
             }
         }
-        Err(BufferPinError::UNAVAILABLE)
+        Err(BufferPinError::Unavailable)
     }
 }
 
@@ -230,7 +230,7 @@ mod buffer_pin_error_tests {
 
     #[test]
     fn error_is_buffer_unavailable() {
-        assert!(BufferPinError::UNAVAILABLE.is_unavailable_error());
+        assert!(BufferPinError::Unavailable.is_unavailable_error());
     }
 
     #[test]
@@ -247,7 +247,7 @@ mod buffer_pin_error_tests {
         let buffer_pin_error = BufferPinError::from(io_error);
         match buffer_pin_error {
             BufferPinError::IO(err) => assert_eq!(ErrorKind::NotFound, err.kind()),
-            BufferPinError::UNAVAILABLE => panic!("unexpected error"),
+            BufferPinError::Unavailable => panic!("unexpected error"),
         }
     }
 }
