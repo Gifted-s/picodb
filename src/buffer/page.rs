@@ -151,12 +151,17 @@ impl BufferPage {
         }
     }
 
-    pub(crate) fn get_string(&self, index: usize) -> Option<Cow<String>> {
+    pub(crate) fn get_string(&self, index: usize) -> Option<&str> {
         self.assert_field_type(index, SupportedType::TypeString);
-        self.get(
+        let str = self.get(
             |starting_offset| StringEncoderDecoder.decode(&self.buffer, starting_offset).0,
             index,
-        )
+        )?;
+        if let Cow::Borrowed(str_reference) = str {
+            Some(str_reference)
+        } else {
+            panic!("string can not be owned in Cow");
+        }
     }
 
     pub(crate) fn finish(&mut self) -> &[u8] {
@@ -211,7 +216,6 @@ impl BufferPage {
 mod tests {
     use crate::buffer::page::BufferPage;
     use crate::page::Page;
-    use std::borrow::Cow;
 
     const BLOCK_SIZE: usize = 4096;
 
@@ -248,9 +252,7 @@ mod tests {
 
         assert_eq!(Some(250), page.get_u8(0));
         assert_eq!(
-            Some(Cow::Owned(String::from(
-                "PebbleDB is an LSM-based storage engine"
-            ))),
+            Some("PebbleDB is an LSM-based storage engine"),
             page.get_string(1)
         );
         assert_eq!(
@@ -291,9 +293,7 @@ mod tests {
 
         assert_eq!(Some(250), decoded.get_u8(0));
         assert_eq!(
-            Some(Cow::Owned(String::from(
-                "PebbleDB is an LSM-based storage engine"
-            ))),
+            Some("PebbleDB is an LSM-based storage engine"),
             decoded.get_string(1)
         );
         assert_eq!(
@@ -336,10 +336,7 @@ mod tests {
         page.add_string(String::from("Bolt-DB"));
         page.mutate_string(String::from("RocksDB"), 0);
 
-        assert_eq!(
-            Some(Cow::Owned(String::from("RocksDB"))),
-            page.get_string(0)
-        );
+        assert_eq!(Some("RocksDB"), page.get_string(0));
     }
 
     #[test]
@@ -362,9 +359,7 @@ mod tests {
         decoded.mutate_u16(320, 2);
 
         assert_eq!(
-            Some(Cow::Owned(String::from(
-                "Rocks-DB is an LSM-based key/value storage engine"
-            ))),
+            Some("Rocks-DB is an LSM-based key/value storage engine"),
             decoded.get_string(0)
         );
         assert_eq!(Some(160), decoded.get_u8(1));
@@ -386,16 +381,11 @@ mod tests {
         decoded.add_string(String::from("BoltDB"));
 
         assert_eq!(
-            Some(Cow::Owned(String::from(
-                "PebbleDB is an LSM-based key/value storage engine"
-            ))),
+            Some("PebbleDB is an LSM-based key/value storage engine"),
             decoded.get_string(0)
         );
         assert_eq!(Some(80), decoded.get_u8(1));
         assert_eq!(Some(160), decoded.get_u16(2));
-        assert_eq!(
-            Some(Cow::Owned(String::from("BoltDB"))),
-            decoded.get_string(3)
-        );
+        assert_eq!(Some("BoltDB"), decoded.get_string(3));
     }
 }

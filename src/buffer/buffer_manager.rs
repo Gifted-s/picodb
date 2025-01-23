@@ -98,7 +98,6 @@ mod buffer_manager_tests {
     use crate::file::block_id::BlockId;
     use crate::file::file_manager::FileManager;
     use crate::log::log_manager::LogManager;
-    use std::borrow::Cow;
     use tempfile::NamedTempFile;
 
     const BLOCK_SIZE: usize = 4096;
@@ -217,9 +216,7 @@ mod buffer_manager_tests {
         let pinned_page = pinned.page();
         let reassigned_buffer_page = pinned_page.as_ref().unwrap();
         assert_eq!(
-            Some(Cow::Owned(String::from(
-                "RocksDB is an LSM based storage engine"
-            ))),
+            Some("RocksDB is an LSM based storage engine"),
             reassigned_buffer_page.get_string(0)
         );
         assert_eq!(250, reassigned_buffer_page.get_u16(1).unwrap());

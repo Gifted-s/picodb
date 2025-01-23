@@ -4,27 +4,29 @@ use std::borrow::Cow;
 
 pub(crate) struct StringEncoderDecoder;
 
-impl EncoderDecoder<String> for StringEncoderDecoder {
-    fn bytes_needed_for_encoding(&self, source: &String) -> BytesNeededForEncoding {
+impl EncoderDecoder<str> for StringEncoderDecoder {
+    fn bytes_needed_for_encoding(&self, source: &str) -> BytesNeededForEncoding {
         BytesEncoderDecoder.bytes_needed_for_encoding(source.as_bytes())
     }
 
     fn encode(
         &self,
-        source: &String,
+        source: &str,
         destination: &mut [u8],
         destination_starting_offset: usize,
     ) -> BytesNeededForEncoding {
         BytesEncoderDecoder.encode(source.as_bytes(), destination, destination_starting_offset)
     }
 
-    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (Cow<'a, String>, EndOffset) {
+    fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (Cow<'a, str>, EndOffset) {
         let (decoded_slice, end_offset) = BytesEncoderDecoder.decode(encoded, from_offset);
-        let as_string = match decoded_slice {
-            Cow::Borrowed(bytes) => String::from_utf8_lossy(bytes).into_owned(),
-            Cow::Owned(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
-        };
-        (Cow::Owned(as_string), end_offset)
+        (
+            match decoded_slice {
+                Cow::Borrowed(bytes) => String::from_utf8_lossy(bytes),
+                Cow::Owned(_) => panic!("string can not be owned in Cow"),
+            },
+            end_offset,
+        )
     }
 }
 

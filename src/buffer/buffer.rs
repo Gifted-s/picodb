@@ -84,7 +84,6 @@ mod tests {
     use crate::file::block_id::BlockId;
     use crate::file::file_manager::FileManager;
     use crate::log::log_manager::LogManager;
-    use std::borrow::Cow;
     use tempfile::NamedTempFile;
 
     const BLOCK_SIZE: usize = 4096;
@@ -122,9 +121,7 @@ mod tests {
         let buffer_page = buffer.page.unwrap();
         assert_eq!(250, buffer_page.get_u16(0).unwrap());
         assert_eq!(
-            Some(Cow::Owned(String::from(
-                "BoltDB is a B+Tree based storage engine"
-            ))),
+            Some("BoltDB is a B+Tree based storage engine"),
             buffer_page.get_string(1)
         );
     }
@@ -226,9 +223,7 @@ mod tests {
         let reassigned_buffer_page = buffer.page.unwrap();
         assert_eq!(250, reassigned_buffer_page.get_u16(0).unwrap());
         assert_eq!(
-            Some(Cow::Owned(String::from(
-                "BoltDB is a B+Tree based storage engine"
-            ))),
+            Some("BoltDB is a B+Tree based storage engine"),
             reassigned_buffer_page.get_string(1)
         );
     }
