@@ -1,4 +1,4 @@
-use crate::buffer::buffer::Buffer;
+use crate::buffer::Buffer;
 use crate::file::block_id::BlockId;
 use crate::log::log_manager::LogManager;
 use std::error::Error;
