@@ -196,31 +196,21 @@ mod tests {
     #[test]
     fn attempt_to_add_a_record_to_a_page_with_insufficient_size() {
         let mut page = LogPage::new(30);
-        assert!(
-            !page.add(b"RocksDB is an LSM-based key/value storage engine")
-        );
+        assert!(!page.add(b"RocksDB is an LSM-based key/value storage engine"));
     }
 
     #[test]
     fn attempt_to_add_a_couple_of_records_in_a_page_with_size_sufficient_for_only_one_record() {
         let mut page = LogPage::new(60);
-        assert!(
-            page.add(b"RocksDB is an LSM-based key/value storage engine")
-        );
-        assert!(
-            !page.add(b"RocksDB is an LSM-based key/value storage engine")
-        );
+        assert!(page.add(b"RocksDB is an LSM-based key/value storage engine"));
+        assert!(!page.add(b"RocksDB is an LSM-based key/value storage engine"));
     }
 
     #[test]
     fn attempt_to_add_a_couple_of_records_successfully_in_a_page_with_just_enough_size() {
         let mut page = LogPage::new(110);
-        assert!(
-            page.add(b"RocksDB is an LSM-based key/value storage engine")
-        );
-        assert!(
-            page.add(b"RocksDB is an LSM-based key/value storage engine")
-        );
+        assert!(page.add(b"RocksDB is an LSM-based key/value storage engine"));
+        assert!(page.add(b"RocksDB is an LSM-based key/value storage engine"));
     }
 
     #[test]

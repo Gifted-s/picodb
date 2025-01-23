@@ -84,8 +84,8 @@ impl Buffer {
 
 #[cfg(test)]
 mod tests {
-    use crate::buffer::Buffer;
     use crate::buffer::page::BufferPage;
+    use crate::buffer::Buffer;
     use crate::file::block_id::BlockId;
     use crate::file::file_manager::FileManager;
     use crate::log::log_manager::LogManager;

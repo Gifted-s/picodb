@@ -51,8 +51,7 @@ mod tests {
         let source = String::from("Rocks is LSM-based");
         let mut destination = vec![0; 100];
 
-        let number_of_bytes_for_encoding =
-            StrEncoderDecoder.encode(&source, &mut destination, 0);
+        let number_of_bytes_for_encoding = StrEncoderDecoder.encode(&source, &mut destination, 0);
 
         let (decoded, _) =
             StrEncoderDecoder.decode(&destination[..number_of_bytes_for_encoding], 0);
