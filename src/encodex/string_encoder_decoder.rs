@@ -1,3 +1,4 @@
+use crate::assert_borrowed_type;
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder, EndOffset};
 use std::borrow::Cow;
@@ -20,11 +21,9 @@ impl EncoderDecoder<str> for StringEncoderDecoder {
 
     fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (Cow<'a, str>, EndOffset) {
         let (decoded_slice, end_offset) = BytesEncoderDecoder.decode(encoded, from_offset);
+        let bytes = assert_borrowed_type(decoded_slice);
         (
-            match decoded_slice {
-                Cow::Borrowed(bytes) => String::from_utf8_lossy(bytes),
-                Cow::Owned(_) => panic!("string can not be owned in Cow"),
-            },
+            Cow::Borrowed(std::str::from_utf8(bytes).unwrap()),
             end_offset,
         )
     }

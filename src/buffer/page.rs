@@ -1,3 +1,4 @@
+use crate::assert_borrowed_type;
 use crate::buffer::page_encoder_decoder::{PageDecoder, PageEncoder};
 use crate::buffer::supported_types::{SupportedType, Types};
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
@@ -6,7 +7,6 @@ use crate::encodex::u16_encoder_decoder::U16EncoderDecoder;
 use crate::encodex::u8_encoder_decoder::U8EncoderDecoder;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder};
 use crate::file::starting_offsets::StartingOffsets;
-use std::borrow::Cow;
 
 pub(crate) struct BufferPage {
     pub(crate) buffer: Vec<u8>,
@@ -144,11 +144,7 @@ impl BufferPage {
             |starting_offset| BytesEncoderDecoder.decode(&self.buffer, starting_offset).0,
             index,
         )?;
-        if let Cow::Borrowed(buffer_reference) = buffer {
-            Some(buffer_reference)
-        } else {
-            panic!("bytes can not be owned in Cow");
-        }
+        Some(assert_borrowed_type(buffer))
     }
 
     pub(crate) fn get_string(&self, index: usize) -> Option<&str> {
@@ -157,11 +153,7 @@ impl BufferPage {
             |starting_offset| StringEncoderDecoder.decode(&self.buffer, starting_offset).0,
             index,
         )?;
-        if let Cow::Borrowed(str_reference) = str {
-            Some(str_reference)
-        } else {
-            panic!("string can not be owned in Cow");
-        }
+        Some(assert_borrowed_type(str))
     }
 
     pub(crate) fn finish(&mut self) -> &[u8] {
