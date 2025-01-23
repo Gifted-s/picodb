@@ -138,12 +138,17 @@ impl BufferPage {
         )
     }
 
-    pub(crate) fn get_bytes(&self, index: usize) -> Option<Cow<[u8]>> {
+    pub(crate) fn get_bytes(&self, index: usize) -> Option<&[u8]> {
         self.assert_field_type(index, SupportedType::TypeBytes);
-        self.get(
+        let buffer = self.get(
             |starting_offset| BytesEncoderDecoder.decode(&self.buffer, starting_offset).0,
             index,
-        )
+        )?;
+        if let Cow::Borrowed(buffer_reference) = buffer {
+            Some(buffer_reference)
+        } else {
+            panic!("bytes can not be owned in Cow");
+        }
     }
 
     pub(crate) fn get_string(&self, index: usize) -> Option<Cow<String>> {
@@ -249,9 +254,7 @@ mod tests {
             page.get_string(1)
         );
         assert_eq!(
-            Some(Cow::Owned(
-                b"RocksDB is an LSM-based storage engine".to_vec()
-            )),
+            Some("RocksDB is an LSM-based storage engine".as_bytes()),
             page.get_bytes(2)
         );
     }
@@ -294,9 +297,7 @@ mod tests {
             decoded.get_string(1)
         );
         assert_eq!(
-            Some(Cow::Owned(
-                b"RocksDB is an LSM-based storage engine".to_vec()
-            )),
+            Some("RocksDB is an LSM-based storage engine".as_bytes()),
             decoded.get_bytes(2)
         );
         assert_eq!(Some(500), decoded.get_u16(3));
@@ -326,7 +327,7 @@ mod tests {
         page.add_bytes(b"Bolt-DB".to_vec());
         page.mutate_bytes(b"RocksDB".to_vec(), 0);
 
-        assert_eq!(Some(Cow::Owned(b"RocksDB".to_vec())), page.get_bytes(0));
+        assert_eq!(Some("RocksDB".as_bytes()), page.get_bytes(0));
     }
 
     #[test]
