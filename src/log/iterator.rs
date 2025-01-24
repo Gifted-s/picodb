@@ -11,7 +11,7 @@ pub(crate) struct BackwardLogIterator<'a, PathType: AsRef<Path>> {
     record_iterator: BackwardRecordIterator,
 }
 
-impl<'a, PathType: AsRef<Path>> Iterator for BackwardLogIterator<'a, PathType> {
+impl<PathType: AsRef<Path>> Iterator for BackwardLogIterator<'_, PathType> {
     type Item = Vec<u8>;
 
     //TODO: avoid copy in the return type
