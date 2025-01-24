@@ -21,7 +21,7 @@ pub(crate) trait EncoderDecoder<T: ?Sized + ToOwned> {
     fn decode<'a>(&self, encoded: &'a [u8], from_offset: usize) -> (Cow<'a, T>, EndOffset);
 }
 
-macro_rules! generate_encoder {
+macro_rules! generate_fixed_size_numeric_encoder_decoder {
     ($type:ty, $name:ident, $encode_fn:path, $decode_fn:path) => {
         pub(crate) struct $name;
 
@@ -58,7 +58,7 @@ macro_rules! generate_encoder {
     };
 }
 
-macro_rules! generate_encoder_tests {
+macro_rules! generate_fixed_size_numeric_encoder_decoder_tests {
     ($type:ty, $test_module_name:ident, $encoder_name:ident) => {
         #[cfg(test)]
         mod $test_module_name {
@@ -112,8 +112,8 @@ fn decode_u32(buffer: &[u8]) -> u32 {
     byteorder::LittleEndian::read_u32(buffer)
 }
 
-generate_encoder!(u16, U16EncoderDecoder, encode_u16, decode_u16);
-generate_encoder!(u32, U32EncoderDecoder, encode_u32, decode_u32);
+generate_fixed_size_numeric_encoder_decoder!(u16, U16EncoderDecoder, encode_u16, decode_u16);
+generate_fixed_size_numeric_encoder_decoder!(u32, U32EncoderDecoder, encode_u32, decode_u32);
 
-generate_encoder_tests!(u16, u16_encoder_decoder_tests, U16EncoderDecoder);
-generate_encoder_tests!(u32, u32_encoder_decoder_tests, U32EncoderDecoder);
+generate_fixed_size_numeric_encoder_decoder_tests!(u16, u16_encoder_decoder_tests, U16EncoderDecoder);
+generate_fixed_size_numeric_encoder_decoder_tests!(u32, u32_encoder_decoder_tests, U32EncoderDecoder);
