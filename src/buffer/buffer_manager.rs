@@ -28,10 +28,10 @@ impl From<io::Error> for BufferPinError {
 }
 
 impl Display for BufferPinError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            BufferPinError::IO(err) => write!(f, "Buffer I/O error: {}", err),
-            BufferPinError::Unavailable => write!(f, "Buffer is unavailable"),
+            BufferPinError::IO(err) => write!(formatter, "Buffer I/O error: {}", err),
+            BufferPinError::Unavailable => write!(formatter, "Buffer is unavailable"),
         }
     }
 }
