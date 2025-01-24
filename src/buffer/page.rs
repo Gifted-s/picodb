@@ -35,25 +35,6 @@ impl BufferPage {
         }
     }
 
-    pub(crate) fn add_u8(&mut self, value: u8) {
-        self.add_field(
-            |destination, current_write_offset| {
-                U8EncoderDecoder.encode(&value, destination, current_write_offset)
-            },
-            FieldType::TypeU8,
-        )
-    }
-
-    pub(crate) fn mutate_u8(&mut self, value: u8, index: usize) {
-        self.assert_field_type(index, FieldType::TypeU8);
-        self.mutate_field(
-            |destination, current_write_offset| {
-                U8EncoderDecoder.encode(&value, destination, current_write_offset)
-            },
-            index,
-        );
-    }
-
     pub(crate) fn add_bytes(&mut self, value: Vec<u8>) {
         self.add_field(
             |destination, current_write_offset| {
@@ -92,19 +73,6 @@ impl BufferPage {
             },
             index,
         );
-    }
-
-    pub(crate) fn get_u8(&self, index: usize) -> Option<u8> {
-        self.assert_field_type(index, FieldType::TypeU8);
-        self.get(
-            |starting_offset| {
-                U8EncoderDecoder
-                    .decode(&self.buffer, starting_offset)
-                    .0
-                    .into_owned()
-            },
-            index,
-        )
     }
 
     pub(crate) fn get_bytes(&self, index: usize) -> Option<&[u8]> {
@@ -222,6 +190,9 @@ macro_rules! generate_mutate_fixed_size {
     };
 }
 
+generate_get_fixed_size!(get_u8, u8, FieldType::TypeU8, U8EncoderDecoder);
+generate_add_fixed_size!(add_u8, u8, FieldType::TypeU8, U8EncoderDecoder);
+generate_mutate_fixed_size!(mutate_u8, u8, FieldType::TypeU8, U8EncoderDecoder);
 generate_get_fixed_size!(get_u16, u16, FieldType::TypeU16, U16EncoderDecoder);
 generate_add_fixed_size!(add_u16, u16, FieldType::TypeU16, U16EncoderDecoder);
 generate_mutate_fixed_size!(mutate_u16, u16, FieldType::TypeU16, U16EncoderDecoder);
