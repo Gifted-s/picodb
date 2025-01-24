@@ -1,3 +1,5 @@
 1. Re-look at the code
 2. remove all unwraps in the code
 3. Implement iterator in log/
+4. When we reach the stage of profiling and benchmarking, this can be a useful resource:
+    https://nnethercote.github.io/perf-book/title-page.html
