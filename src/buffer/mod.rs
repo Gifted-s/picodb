@@ -1,7 +1,7 @@
 mod buffer_manager;
+mod field_types;
 pub(crate) mod page;
 pub(crate) mod page_encoder_decoder;
-mod supported_types;
 
 use crate::buffer::page::BufferPage;
 use crate::file::block_id::BlockId;

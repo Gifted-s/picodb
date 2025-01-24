@@ -1,6 +1,6 @@
 use crate::assert_borrowed_type;
+use crate::buffer::field_types::{FieldType, Fields};
 use crate::buffer::page_encoder_decoder::{PageDecoder, PageEncoder};
-use crate::buffer::supported_types::{SupportedType, Types};
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::str_encoder_decoder::StrEncoderDecoder;
 use crate::encodex::u16_encoder_decoder::U16EncoderDecoder;
@@ -11,7 +11,7 @@ use crate::file::starting_offsets::StartingOffsets;
 pub(crate) struct BufferPage {
     pub(crate) buffer: Vec<u8>,
     pub(crate) starting_offsets: StartingOffsets,
-    pub(crate) types: Types,
+    pub(crate) types: Fields,
     pub(crate) current_write_offset: usize,
 }
 
@@ -29,7 +29,7 @@ impl BufferPage {
         BufferPage {
             buffer: vec![0; block_size],
             starting_offsets: StartingOffsets::new(),
-            types: Types::new(),
+            types: Fields::new(),
             current_write_offset: 0,
         }
     }
@@ -39,12 +39,12 @@ impl BufferPage {
             |destination, current_write_offset| {
                 U8EncoderDecoder.encode(&value, destination, current_write_offset)
             },
-            SupportedType::TypeU8,
+            FieldType::TypeU8,
         )
     }
 
     pub(crate) fn mutate_u8(&mut self, value: u8, index: usize) {
-        self.assert_field_type(index, SupportedType::TypeU8);
+        self.assert_field_type(index, FieldType::TypeU8);
         self.mutate_field(
             |destination, current_write_offset| {
                 U8EncoderDecoder.encode(&value, destination, current_write_offset)
@@ -58,12 +58,12 @@ impl BufferPage {
             |destination, current_write_offset| {
                 U16EncoderDecoder.encode(&value, destination, current_write_offset)
             },
-            SupportedType::TypeU16,
+            FieldType::TypeU16,
         )
     }
 
     pub(crate) fn mutate_u16(&mut self, value: u16, index: usize) {
-        self.assert_field_type(index, SupportedType::TypeU16);
+        self.assert_field_type(index, FieldType::TypeU16);
         self.mutate_field(
             |destination, current_write_offset| {
                 U16EncoderDecoder.encode(&value, destination, current_write_offset)
@@ -77,13 +77,13 @@ impl BufferPage {
             |destination, current_write_offset| {
                 BytesEncoderDecoder.encode(&value, destination, current_write_offset)
             },
-            SupportedType::TypeBytes,
+            FieldType::TypeBytes,
         )
     }
 
     //TODO: What if the new value does not match the old size
     pub(crate) fn mutate_bytes(&mut self, value: Vec<u8>, index: usize) {
-        self.assert_field_type(index, SupportedType::TypeBytes);
+        self.assert_field_type(index, FieldType::TypeBytes);
         self.mutate_field(
             |destination, current_write_offset| {
                 BytesEncoderDecoder.encode(&value, destination, current_write_offset)
@@ -97,13 +97,13 @@ impl BufferPage {
             |destination, current_write_offset| {
                 StrEncoderDecoder.encode(value, destination, current_write_offset)
             },
-            SupportedType::TypeString,
+            FieldType::TypeString,
         )
     }
 
     //TODO: What if the new value does not match the old size
     pub(crate) fn mutate_string(&mut self, value: &str, index: usize) {
-        self.assert_field_type(index, SupportedType::TypeString);
+        self.assert_field_type(index, FieldType::TypeString);
         self.mutate_field(
             |destination, current_write_offset| {
                 StrEncoderDecoder.encode(value, destination, current_write_offset)
@@ -113,7 +113,7 @@ impl BufferPage {
     }
 
     pub(crate) fn get_u8(&self, index: usize) -> Option<u8> {
-        self.assert_field_type(index, SupportedType::TypeU8);
+        self.assert_field_type(index, FieldType::TypeU8);
         self.get(
             |starting_offset| {
                 U8EncoderDecoder
@@ -126,7 +126,7 @@ impl BufferPage {
     }
 
     pub(crate) fn get_u16(&self, index: usize) -> Option<u16> {
-        self.assert_field_type(index, SupportedType::TypeU16);
+        self.assert_field_type(index, FieldType::TypeU16);
         self.get(
             |starting_offset| {
                 U16EncoderDecoder
@@ -139,7 +139,7 @@ impl BufferPage {
     }
 
     pub(crate) fn get_bytes(&self, index: usize) -> Option<&[u8]> {
-        self.assert_field_type(index, SupportedType::TypeBytes);
+        self.assert_field_type(index, FieldType::TypeBytes);
         let buffer = self.get(
             |starting_offset| BytesEncoderDecoder.decode(&self.buffer, starting_offset).0,
             index,
@@ -148,7 +148,7 @@ impl BufferPage {
     }
 
     pub(crate) fn get_string(&self, index: usize) -> Option<&str> {
-        self.assert_field_type(index, SupportedType::TypeString);
+        self.assert_field_type(index, FieldType::TypeString);
         let str = self.get(
             |starting_offset| StrEncoderDecoder.decode(&self.buffer, starting_offset).0,
             index,
@@ -170,14 +170,14 @@ impl BufferPage {
         &self.buffer
     }
 
-    fn assert_field_type(&self, index: usize, expected: SupportedType) {
+    fn assert_field_type(&self, index: usize, expected: FieldType) {
         assert_eq!(Some(&expected), self.types.type_at(index))
     }
 
     fn add_field<F: Fn(&mut [u8], usize) -> BytesNeededForEncoding>(
         &mut self,
         encode_fn: F,
-        field_type: SupportedType,
+        field_type: FieldType,
     ) {
         let bytes_needed_for_encoding = encode_fn(&mut self.buffer, self.current_write_offset);
         self.starting_offsets

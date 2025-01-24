@@ -1,5 +1,5 @@
+use crate::buffer::field_types::Fields;
 use crate::buffer::page::BufferPage;
-use crate::buffer::supported_types::Types;
 use crate::file::starting_offsets::StartingOffsets;
 use byteorder::ByteOrder;
 
@@ -8,7 +8,7 @@ const RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS: usize = size_of::<u16>();
 pub(crate) struct PageEncoder<'a> {
     pub(crate) buffer: &'a mut [u8],
     pub(crate) starting_offsets: &'a StartingOffsets,
-    pub(crate) types: &'a Types,
+    pub(crate) types: &'a Fields,
 }
 
 pub(crate) struct PageDecoder;
@@ -64,7 +64,7 @@ impl PageDecoder {
             return BufferPage {
                 buffer,
                 starting_offsets: StartingOffsets::new(),
-                types: Types::new(),
+                types: Fields::new(),
                 current_write_offset: 0,
             };
         }
@@ -96,24 +96,24 @@ impl PageDecoder {
         )
     }
 
-    fn decode_types(buffer: &[u8], number_of_offsets: usize) -> Types {
+    fn decode_types(buffer: &[u8], number_of_offsets: usize) -> Fields {
         let number_of_types = number_of_offsets;
         let offset_containing_types = buffer.len()
             - RESERVED_SIZE_FOR_NUMBER_OF_OFFSETS
             - StartingOffsets::size_in_bytes_for(number_of_offsets)
-            - Types::size_in_bytes_for(number_of_types);
+            - Fields::size_in_bytes_for(number_of_types);
 
-        Types::decode_from(
+        Fields::decode_from(
             &buffer[offset_containing_types
-                ..offset_containing_types + Types::size_in_bytes_for(number_of_types)],
+                ..offset_containing_types + Fields::size_in_bytes_for(number_of_types)],
         )
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::buffer::field_types::{FieldType, Fields};
     use crate::buffer::page_encoder_decoder::{PageDecoder, PageEncoder};
-    use crate::buffer::supported_types::{SupportedType, Types};
     use crate::file::starting_offsets::StartingOffsets;
     use byteorder::ByteOrder;
 
@@ -123,9 +123,9 @@ mod tests {
         starting_offsets.add_offset(0);
         starting_offsets.add_offset(2);
 
-        let mut types = Types::new();
-        types.add(SupportedType::TypeU16);
-        types.add(SupportedType::TypeU16);
+        let mut types = Fields::new();
+        types.add(FieldType::TypeU16);
+        types.add(FieldType::TypeU16);
 
         let mut buffer = vec![0; 512];
         byteorder::LittleEndian::write_u16(&mut buffer[0..2], 200);
@@ -140,7 +140,7 @@ mod tests {
 
         let decoded = PageDecoder::decode_page(encoder.buffer.to_vec());
         assert_eq!(2, decoded.starting_offsets.length());
-        assert_eq!(&SupportedType::TypeU16, decoded.types.type_at(0).unwrap());
-        assert_eq!(&SupportedType::TypeU16, decoded.types.type_at(1).unwrap());
+        assert_eq!(&FieldType::TypeU16, decoded.types.type_at(0).unwrap());
+        assert_eq!(&FieldType::TypeU16, decoded.types.type_at(1).unwrap());
     }
 }
