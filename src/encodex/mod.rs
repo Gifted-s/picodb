@@ -115,5 +115,13 @@ fn decode_u32(buffer: &[u8]) -> u32 {
 generate_fixed_size_numeric_encoder_decoder!(u16, U16EncoderDecoder, encode_u16, decode_u16);
 generate_fixed_size_numeric_encoder_decoder!(u32, U32EncoderDecoder, encode_u32, decode_u32);
 
-generate_fixed_size_numeric_encoder_decoder_tests!(u16, u16_encoder_decoder_tests, U16EncoderDecoder);
-generate_fixed_size_numeric_encoder_decoder_tests!(u32, u32_encoder_decoder_tests, U32EncoderDecoder);
+generate_fixed_size_numeric_encoder_decoder_tests!(
+    u16,
+    u16_encoder_decoder_tests,
+    U16EncoderDecoder
+);
+generate_fixed_size_numeric_encoder_decoder_tests!(
+    u32,
+    u32_encoder_decoder_tests,
+    U32EncoderDecoder
+);

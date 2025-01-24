@@ -54,25 +54,6 @@ impl BufferPage {
         );
     }
 
-    pub(crate) fn add_u16(&mut self, value: u16) {
-        self.add_field(
-            |destination, current_write_offset| {
-                U16EncoderDecoder.encode(&value, destination, current_write_offset)
-            },
-            FieldType::TypeU16,
-        )
-    }
-
-    pub(crate) fn mutate_u16(&mut self, value: u16, index: usize) {
-        self.assert_field_type(index, FieldType::TypeU16);
-        self.mutate_field(
-            |destination, current_write_offset| {
-                U16EncoderDecoder.encode(&value, destination, current_write_offset)
-            },
-            index,
-        );
-    }
-
     pub(crate) fn add_bytes(&mut self, value: Vec<u8>) {
         self.add_field(
             |destination, current_write_offset| {
@@ -118,19 +99,6 @@ impl BufferPage {
         self.get(
             |starting_offset| {
                 U8EncoderDecoder
-                    .decode(&self.buffer, starting_offset)
-                    .0
-                    .into_owned()
-            },
-            index,
-        )
-    }
-
-    pub(crate) fn get_u16(&self, index: usize) -> Option<u16> {
-        self.assert_field_type(index, FieldType::TypeU16);
-        self.get(
-            |starting_offset| {
-                U16EncoderDecoder
                     .decode(&self.buffer, starting_offset)
                     .0
                     .into_owned()
@@ -204,6 +172,59 @@ impl BufferPage {
             .map(|starting_offset| decode_fn(*starting_offset as usize))
     }
 }
+
+macro_rules! generate_get_fixed_size {
+    ($method_name:ident, $type:ty, $field_type:expr, $encoder_name:ident) => {
+        impl BufferPage {
+            pub(crate) fn $method_name(&self, index: usize) -> Option<$type> {
+                self.assert_field_type(index, $field_type);
+                let encoder = $encoder_name;
+
+                self.get(
+                    |starting_offset| encoder.decode(&self.buffer, starting_offset).0.into_owned(),
+                    index,
+                )
+            }
+        }
+    };
+}
+
+macro_rules! generate_add_fixed_size {
+    ($method_name:ident, $type:ty, $field_type:expr, $encoder_name:ident) => {
+        impl BufferPage {
+            pub(crate) fn $method_name(&mut self, value: $type) {
+                let encoder = $encoder_name;
+                self.add_field(
+                    |destination, current_write_offset| {
+                        encoder.encode(&value, destination, current_write_offset)
+                    },
+                    $field_type,
+                )
+            }
+        }
+    };
+}
+
+macro_rules! generate_mutate_fixed_size {
+    ($method_name:ident, $type:ty, $field_type:expr, $encoder_name:ident) => {
+        impl BufferPage {
+            pub(crate) fn $method_name(&mut self, value: $type, index: usize) {
+                self.assert_field_type(index, $field_type);
+                let encoder = $encoder_name;
+                self.mutate_field(
+                    |destination, current_write_offset| {
+                        encoder.encode(&value, destination, current_write_offset)
+                    },
+                    index,
+                );
+            }
+        }
+    };
+}
+
+generate_get_fixed_size!(get_u16, u16, FieldType::TypeU16, U16EncoderDecoder);
+generate_add_fixed_size!(add_u16, u16, FieldType::TypeU16, U16EncoderDecoder);
+generate_mutate_fixed_size!(mutate_u16, u16, FieldType::TypeU16, U16EncoderDecoder);
 
 #[cfg(test)]
 mod tests {
