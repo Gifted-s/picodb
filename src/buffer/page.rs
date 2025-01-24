@@ -24,6 +24,7 @@ impl crate::page::Page for BufferPage {
     }
 }
 
+//TODO: Support for deletion
 impl BufferPage {
     pub(crate) fn new(block_size: usize) -> Self {
         BufferPage {
