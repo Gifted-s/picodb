@@ -3,9 +3,9 @@ use crate::buffer::field_types::{FieldType, Fields};
 use crate::buffer::page_encoder_decoder::{PageDecoder, PageEncoder};
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::str_encoder_decoder::StrEncoderDecoder;
-use crate::encodex::U16EncoderDecoder;
 use crate::encodex::U8EncoderDecoder;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder};
+use crate::encodex::{U16EncoderDecoder, U32EncoderDecoder};
 use crate::file::starting_offsets::StartingOffsets;
 
 pub(crate) struct BufferPage {
@@ -196,6 +196,9 @@ generate_mutate_fixed_size!(mutate_u8, u8, FieldType::TypeU8, U8EncoderDecoder);
 generate_get_fixed_size!(get_u16, u16, FieldType::TypeU16, U16EncoderDecoder);
 generate_add_fixed_size!(add_u16, u16, FieldType::TypeU16, U16EncoderDecoder);
 generate_mutate_fixed_size!(mutate_u16, u16, FieldType::TypeU16, U16EncoderDecoder);
+generate_get_fixed_size!(get_u32, u32, FieldType::TypeU32, U32EncoderDecoder);
+generate_add_fixed_size!(add_u32, u32, FieldType::TypeU32, U32EncoderDecoder);
+generate_mutate_fixed_size!(mutate_u32, u32, FieldType::TypeU32, U32EncoderDecoder);
 
 #[cfg(test)]
 mod tests {
@@ -234,6 +237,7 @@ mod tests {
         page.add_u8(250);
         page.add_string("PebbleDB is an LSM-based storage engine");
         page.add_bytes(b"RocksDB is an LSM-based storage engine".to_vec());
+        page.add_u32(310);
 
         assert_eq!(Some(250), page.get_u8(0));
         assert_eq!(
@@ -244,6 +248,7 @@ mod tests {
             Some("RocksDB is an LSM-based storage engine".as_bytes()),
             page.get_bytes(2)
         );
+        assert_eq!(Some(310), page.get_u32(3));
     }
 
     #[test]
@@ -304,6 +309,15 @@ mod tests {
         page.mutate_u16(252, 0);
 
         assert_eq!(Some(252), page.get_u16(0));
+    }
+
+    #[test]
+    fn mutate_an_u32() {
+        let mut page = BufferPage::new(BLOCK_SIZE);
+        page.add_u32(50);
+        page.mutate_u32(252, 0);
+
+        assert_eq!(Some(252), page.get_u32(0));
     }
 
     #[test]

@@ -64,6 +64,17 @@ macro_rules! generate_fixed_size_numeric_encoder_decoder_tests {
             use super::*;
 
             #[test]
+            fn bytes_needed_for_encoding() {
+                let encoder = $encoder_name;
+                let value: $type = 100;
+
+                assert_eq!(
+                    std::mem::size_of::<$type>(),
+                    encoder.bytes_needed_for_encoding(&value)
+                );
+            }
+
+            #[test]
             fn encode_decode() {
                 let encoder = $encoder_name;
                 let value = 250;

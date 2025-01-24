@@ -1,8 +1,8 @@
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::str_encoder_decoder::StrEncoderDecoder;
-use crate::encodex::U16EncoderDecoder;
 use crate::encodex::U8EncoderDecoder;
 use crate::encodex::{EncoderDecoder, EndOffset};
+use crate::encodex::{U16EncoderDecoder, U32EncoderDecoder};
 
 const RESERVED_SIZE_FOR_TYPE: usize = size_of::<u8>();
 
@@ -15,6 +15,7 @@ pub(crate) struct Fields {
 pub(crate) enum FieldType {
     TypeU8,
     TypeU16,
+    TypeU32,
     TypeBytes,
     TypeString,
 }
@@ -24,8 +25,9 @@ impl From<u8> for FieldType {
         match value {
             0 => FieldType::TypeU8,
             1 => FieldType::TypeU16,
-            2 => FieldType::TypeBytes,
-            3 => FieldType::TypeString,
+            2 => FieldType::TypeU32,
+            3 => FieldType::TypeBytes,
+            4 => FieldType::TypeString,
             _ => unreachable!(),
         }
     }
@@ -36,8 +38,9 @@ impl From<FieldType> for u8 {
         match val {
             FieldType::TypeU8 => 0,
             FieldType::TypeU16 => 1,
-            FieldType::TypeBytes => 2,
-            FieldType::TypeString => 3,
+            FieldType::TypeU32 => 2,
+            FieldType::TypeBytes => 3,
+            FieldType::TypeString => 4,
         }
     }
 }
@@ -47,6 +50,7 @@ impl FieldType {
         match self {
             FieldType::TypeU8 => U8EncoderDecoder.decode(buffer, from_offset).1,
             FieldType::TypeU16 => U16EncoderDecoder.decode(buffer, from_offset).1,
+            FieldType::TypeU32 => U32EncoderDecoder.decode(buffer, from_offset).1,
             FieldType::TypeBytes => BytesEncoderDecoder.decode(buffer, from_offset).1,
             FieldType::TypeString => StrEncoderDecoder.decode(buffer, from_offset).1,
         }
@@ -134,6 +138,7 @@ mod fields_tests {
         types.add(FieldType::TypeBytes);
         types.add(FieldType::TypeString);
         types.add(FieldType::TypeU16);
+        types.add(FieldType::TypeU32);
 
         let encoded = types.encode();
         let decoded = Fields::decode_from(&encoded);
@@ -142,6 +147,7 @@ mod fields_tests {
         assert_eq!(&FieldType::TypeBytes, decoded.type_at(1).unwrap());
         assert_eq!(&FieldType::TypeString, decoded.type_at(2).unwrap());
         assert_eq!(&FieldType::TypeU16, decoded.type_at(3).unwrap());
+        assert_eq!(&FieldType::TypeU32, decoded.type_at(4).unwrap());
     }
 
     #[test]
@@ -183,6 +189,14 @@ mod field_type_tests {
         byteorder::LittleEndian::write_u16(&mut buffer[0..2], 250);
 
         assert_eq!(12, FieldType::TypeU16.end_offset_post_decode(&buffer, 10));
+    }
+
+    #[test]
+    fn end_offset_post_decode_for_u32() {
+        let mut buffer = vec![0; 100];
+        byteorder::LittleEndian::write_u32(&mut buffer[0..4], 250);
+
+        assert_eq!(14, FieldType::TypeU32.end_offset_post_decode(&buffer, 10));
     }
 
     #[test]
