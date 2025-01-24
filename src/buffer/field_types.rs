@@ -1,7 +1,7 @@
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::str_encoder_decoder::StrEncoderDecoder;
-use crate::encodex::u16_encoder_decoder::U16EncoderDecoder;
 use crate::encodex::u8_encoder_decoder::U8EncoderDecoder;
+use crate::encodex::U16EncoderDecoder;
 use crate::encodex::{EncoderDecoder, EndOffset};
 
 const RESERVED_SIZE_FOR_TYPE: usize = size_of::<u8>();
