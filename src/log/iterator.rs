@@ -11,22 +11,11 @@ pub(crate) struct BackwardLogIterator<'a, PathType: AsRef<Path>> {
     record_iterator: BackwardRecordIterator,
 }
 
-impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
-    pub(crate) fn new(
-        file_manager: &'a FileManager<PathType>,
-        current_block_id: BlockId,
-    ) -> Result<BackwardLogIterator<'a, PathType>, io::Error> {
-        let page = file_manager.read::<LogPage>(&current_block_id)?;
-
-        Ok(BackwardLogIterator {
-            file_manager,
-            current_block_id,
-            record_iterator: BackwardRecordIterator::new(Rc::new(page)),
-        })
-    }
+impl<'a, PathType: AsRef<Path>> Iterator for BackwardLogIterator<'a, PathType> {
+    type Item = Vec<u8>;
 
     //TODO: avoid copy in the return type
-    pub(crate) fn record(&mut self) -> Option<Vec<u8>> {
+    fn next(&mut self) -> Option<Self::Item> {
         if let Some(record) = self.record_iterator.record() {
             return Some(record.to_vec());
         }
@@ -41,5 +30,20 @@ impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
             return self.record_iterator.record().map(Vec::from);
         }
         None
+    }
+}
+
+impl<'a, PathType: AsRef<Path>> BackwardLogIterator<'a, PathType> {
+    pub(crate) fn new(
+        file_manager: &'a FileManager<PathType>,
+        current_block_id: BlockId,
+    ) -> Result<BackwardLogIterator<'a, PathType>, io::Error> {
+        let page = file_manager.read::<LogPage>(&current_block_id)?;
+
+        Ok(BackwardLogIterator {
+            file_manager,
+            current_block_id,
+            record_iterator: BackwardRecordIterator::new(Rc::new(page)),
+        })
     }
 }

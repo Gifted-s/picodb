@@ -116,9 +116,9 @@ mod tests {
         let mut iterator = log_manager.backward_iterator().unwrap();
         assert_eq!(
             b"RocksDB is an LSM-based storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
-        assert_eq!(None, iterator.record());
+        assert_eq!(None, iterator.next());
     }
 
     #[test]
@@ -143,17 +143,17 @@ mod tests {
         let mut iterator = log_manager.backward_iterator().unwrap();
         assert_eq!(
             b"BoltDB is a B+Tree storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
         assert_eq!(
             b"PebbleDB is an LSM-based storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
         assert_eq!(
             b"RocksDB is an LSM-based storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
-        assert_eq!(None, iterator.record());
+        assert_eq!(None, iterator.next());
     }
 
     #[test]
@@ -179,17 +179,17 @@ mod tests {
         let mut iterator = log_manager.backward_iterator().unwrap();
         assert_eq!(
             b"BoltDB is a B+Tree storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
         assert_eq!(
             b"PebbleDB is an LSM-based storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
         assert_eq!(
             b"RocksDB is an LSM-based storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
-        assert_eq!(None, iterator.record());
+        assert_eq!(None, iterator.next());
     }
 
     #[test]
@@ -219,16 +219,16 @@ mod tests {
         let mut iterator = reloaded_log_manager.backward_iterator().unwrap();
         assert_eq!(
             b"BoltDB is a B+Tree storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
         assert_eq!(
             b"PebbleDB is an LSM-based storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
         assert_eq!(
             b"RocksDB is an LSM-based storage engine".to_vec(),
-            iterator.record().unwrap()
+            iterator.next().unwrap()
         );
-        assert_eq!(None, iterator.record());
+        assert_eq!(None, iterator.next());
     }
 }
