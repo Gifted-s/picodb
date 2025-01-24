@@ -156,7 +156,7 @@ impl BufferPage {
         Some(assert_borrowed_type(str))
     }
 
-    pub(crate) fn finish(&mut self) -> &[u8] {
+    pub(crate) fn encode(&mut self) -> &[u8] {
         if self.starting_offsets.length() == 0 {
             panic!("empty page")
         }
@@ -258,7 +258,7 @@ mod tests {
     fn attempt_to_decode_an_empty_page() {
         let mut page = BufferPage::new(BLOCK_SIZE);
 
-        page.finish();
+        page.encode();
     }
 
     #[test]
@@ -266,7 +266,7 @@ mod tests {
         let mut page = BufferPage::new(BLOCK_SIZE);
         page.add_u8(250);
 
-        let encoded = page.finish();
+        let encoded = page.encode();
         let decoded = BufferPage::decode_from(encoded.to_vec());
 
         assert_eq!(Some(250), decoded.get_u8(0));
@@ -280,7 +280,7 @@ mod tests {
         page.add_bytes(b"RocksDB is an LSM-based storage engine".to_vec());
         page.add_u16(500);
 
-        let encoded = page.finish();
+        let encoded = page.encode();
         let decoded = BufferPage::decode_from(encoded.to_vec());
 
         assert_eq!(Some(250), decoded.get_u8(0));
@@ -338,7 +338,7 @@ mod tests {
         page.add_u8(80);
         page.add_u16(160);
 
-        let encoded = page.finish();
+        let encoded = page.encode();
         let mut decoded = BufferPage::decode_from(encoded.to_vec());
 
         decoded.mutate_string("Rocks-DB is an LSM-based key/value storage engine", 0);
@@ -360,7 +360,7 @@ mod tests {
         page.add_u8(80);
         page.add_u16(160);
 
-        let encoded = page.finish();
+        let encoded = page.encode();
         let mut decoded = BufferPage::decode_from(encoded.to_vec());
 
         decoded.add_string("BoltDB");

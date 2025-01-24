@@ -72,7 +72,7 @@ impl<'a, PathType: AsRef<Path>> LogManager<'a, PathType> {
 
     fn force_flush(&mut self) -> Result<(), io::Error> {
         self.file_manager
-            .write(&self.current_block_id, self.log_page.finish())?;
+            .write(&self.current_block_id, self.log_page.encode())?;
         self.last_saved_log_sequence_number = self.latest_log_sequence_number;
         Ok(())
     }

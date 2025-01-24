@@ -74,7 +74,7 @@ impl LogPage {
         true
     }
 
-    pub(crate) fn finish(&mut self) -> &[u8] {
+    pub(crate) fn encode(&mut self) -> &[u8] {
         if self.starting_offsets.length() == 0 {
             return &self.buffer;
         }
@@ -216,7 +216,7 @@ mod tests {
     #[test]
     fn attempt_to_create_a_log_with_no_records() {
         let mut page = LogPage::new(110);
-        let buffer = page.finish();
+        let buffer = page.encode();
         assert_eq!(110, buffer.len());
     }
 
@@ -232,7 +232,7 @@ mod tests {
         let mut page = LogPage::new(4096);
         page.add(b"RocksDB is an LSM-based key/value storage engine");
 
-        let _ = page.finish();
+        let _ = page.encode();
         let mut iterator = Rc::new(page).backward_iterator();
         assert_eq!(
             b"RocksDB is an LSM-based key/value storage engine",
@@ -246,7 +246,7 @@ mod tests {
         page.add(b"RocksDB is an LSM-based key/value storage engine");
         page.add(b"PebbleDB is an LSM-based key/value storage engine");
 
-        let _ = page.finish();
+        let _ = page.encode();
         let mut iterator = Rc::new(page).backward_iterator();
 
         assert_eq!(
@@ -269,7 +269,7 @@ mod tests {
                 page.add(record.as_bytes());
             });
 
-        let _ = page.finish();
+        let _ = page.encode();
         let mut iterator = Rc::new(page).backward_iterator();
 
         (1..=100).rev().for_each(|record_id| {
@@ -290,10 +290,10 @@ mod tests {
         let mut page = LogPage::new(4096);
         page.add(b"PebbleDB is an LSM-based key/value storage engine");
 
-        let buffer = page.finish();
+        let buffer = page.encode();
         let decoded_page = LogPage::decode_from(buffer.to_vec());
 
-        let _ = page.finish();
+        let _ = page.encode();
         let mut iterator = Rc::new(decoded_page).backward_iterator();
 
         assert_eq!(
@@ -309,10 +309,10 @@ mod tests {
         page.add(b"PebbleDB is an LSM-based key/value storage engine");
         page.add(b"RocksDB is an LSM-based key/value storage engine");
 
-        let buffer = page.finish();
+        let buffer = page.encode();
         let decoded_page = LogPage::decode_from(buffer.to_vec());
 
-        let _ = page.finish();
+        let _ = page.encode();
         let mut iterator = Rc::new(decoded_page).backward_iterator();
 
         assert_eq!(
@@ -335,7 +335,7 @@ mod tests {
                 page.add(record.as_bytes());
             });
 
-        let buffer = page.finish();
+        let buffer = page.encode();
         let decoded_page = LogPage::decode_from(buffer.to_vec());
         let mut iterator = Rc::new(decoded_page).backward_iterator();
 

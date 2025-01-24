@@ -69,7 +69,7 @@ impl Buffer {
             log_manager.flush(self.log_sequence_number)?;
             log_manager.file_manager().write(
                 self.block_id.as_ref().unwrap(),
-                self.page.as_mut().unwrap().finish(),
+                self.page.as_mut().unwrap().encode(),
             )?;
             self.transaction_number = -1;
         }
@@ -115,7 +115,7 @@ mod tests {
 
         assert!(log_manager
             .file_manager()
-            .write(&BlockId::new(buffer_file_name, 0), page.finish())
+            .write(&BlockId::new(buffer_file_name, 0), page.encode())
             .is_ok());
 
         let mut buffer = Buffer::new();
@@ -147,7 +147,7 @@ mod tests {
 
         assert!(log_manager
             .file_manager()
-            .write(&BlockId::new(buffer_file_name, 0), page.finish())
+            .write(&BlockId::new(buffer_file_name, 0), page.encode())
             .is_ok());
 
         let mut buffer = Buffer::new();
@@ -177,7 +177,7 @@ mod tests {
 
         assert!(log_manager
             .file_manager()
-            .write(&BlockId::new(buffer_file_name, 0), page.finish())
+            .write(&BlockId::new(buffer_file_name, 0), page.encode())
             .is_ok());
 
         let mut buffer = Buffer::new();
