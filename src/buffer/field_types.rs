@@ -10,6 +10,7 @@ pub(crate) struct Fields {
     types: Vec<FieldType>,
 }
 
+//TODO: use macro maybe
 #[non_exhaustive]
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub(crate) enum FieldType {
