@@ -3,8 +3,8 @@ use crate::buffer::field_types::{FieldType, Fields};
 use crate::buffer::page_encoder_decoder::{PageDecoder, PageEncoder};
 use crate::encodex::bytes_encoder_decoder::BytesEncoderDecoder;
 use crate::encodex::str_encoder_decoder::StrEncoderDecoder;
-use crate::encodex::u8_encoder_decoder::U8EncoderDecoder;
 use crate::encodex::U16EncoderDecoder;
+use crate::encodex::U8EncoderDecoder;
 use crate::encodex::{BytesNeededForEncoding, EncoderDecoder};
 use crate::file::starting_offsets::StartingOffsets;
 

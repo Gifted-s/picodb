@@ -3,7 +3,6 @@ use std::borrow::Cow;
 
 pub(crate) mod bytes_encoder_decoder;
 pub(crate) mod str_encoder_decoder;
-pub(crate) mod u8_encoder_decoder;
 
 pub(crate) type BytesNeededForEncoding = usize;
 pub(crate) type EndOffset = usize;
@@ -67,11 +66,7 @@ macro_rules! generate_fixed_size_numeric_encoder_decoder_tests {
             #[test]
             fn encode_decode() {
                 let encoder = $encoder_name;
-
-                let value: $type = match std::mem::size_of::<$type>() {
-                    1 => 250,
-                    _ => 2500,
-                };
+                let value = 250;
 
                 let mut buffer = vec![0u8; std::mem::size_of::<$type>()];
                 encoder.encode(&value, &mut buffer, 0);
@@ -83,11 +78,7 @@ macro_rules! generate_fixed_size_numeric_encoder_decoder_tests {
             #[test]
             fn encode_decode_at_a_diffent_offset() {
                 let encoder = $encoder_name;
-
-                let value: $type = match std::mem::size_of::<$type>() {
-                    1 => 250,
-                    _ => 2500,
-                };
+                let value = 250;
 
                 let mut buffer = vec![0u8; 100];
                 encoder.encode(&value, &mut buffer, 10);
@@ -99,6 +90,12 @@ macro_rules! generate_fixed_size_numeric_encoder_decoder_tests {
     };
 }
 
+fn encode_u8(buffer: &mut [u8], value: u8) {
+    buffer[0] = value;
+}
+fn decode_u8(buffer: &[u8]) -> u8 {
+    buffer[0]
+}
 fn encode_u16(buffer: &mut [u8], value: u16) {
     byteorder::LittleEndian::write_u16(buffer, value);
 }
@@ -112,9 +109,11 @@ fn decode_u32(buffer: &[u8]) -> u32 {
     byteorder::LittleEndian::read_u32(buffer)
 }
 
+generate_fixed_size_numeric_encoder_decoder!(u8, U8EncoderDecoder, encode_u8, decode_u8);
 generate_fixed_size_numeric_encoder_decoder!(u16, U16EncoderDecoder, encode_u16, decode_u16);
 generate_fixed_size_numeric_encoder_decoder!(u32, U32EncoderDecoder, encode_u32, decode_u32);
 
+generate_fixed_size_numeric_encoder_decoder_tests!(u8, u8_encoder_decoder_tests, U8EncoderDecoder);
 generate_fixed_size_numeric_encoder_decoder_tests!(
     u16,
     u16_encoder_decoder_tests,
