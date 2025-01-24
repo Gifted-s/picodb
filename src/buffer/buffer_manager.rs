@@ -226,6 +226,7 @@ mod buffer_manager_tests {
 #[cfg(test)]
 mod buffer_pin_error_tests {
     use crate::buffer::buffer_manager::BufferPinError;
+    use std::io;
     use std::io::{Error, ErrorKind};
 
     #[test]
@@ -249,5 +250,22 @@ mod buffer_pin_error_tests {
             BufferPinError::IO(err) => assert_eq!(ErrorKind::NotFound, err.kind()),
             BufferPinError::Unavailable => panic!("unexpected error"),
         }
+    }
+
+    #[test]
+    fn test_buffer_pin_error_of_type_io_error() {
+        let io_error = io::Error::new(io::ErrorKind::Other, "disk failure");
+        let error = BufferPinError::IO(io_error);
+
+        let formatted = format!("{}", error);
+        assert_eq!(formatted, "Buffer I/O error: disk failure");
+    }
+
+    #[test]
+    fn test_buffer_pin_error_of_type_io_unavailable_error() {
+        let error = BufferPinError::Unavailable;
+
+        let formatted = format!("{}", error);
+        assert_eq!(formatted, "Buffer is unavailable");
     }
 }
