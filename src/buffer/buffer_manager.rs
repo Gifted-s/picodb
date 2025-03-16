@@ -38,7 +38,7 @@ impl Display for BufferPinError {
 
 impl Error for BufferPinError {}
 
-struct BufferManager<'a, PathType: AsRef<Path>> {
+pub struct BufferManager<'a, PathType: AsRef<Path>> {
     buffer_pool: Vec<Buffer>,
     log_manager: &'a mut LogManager<'a, PathType>,
     available_buffers: usize,

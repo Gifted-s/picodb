@@ -1,4 +1,4 @@
-mod buffer_manager;
+pub(crate) mod buffer_manager;
 mod field_types;
 pub(crate) mod page;
 pub(crate) mod page_encoder_decoder;

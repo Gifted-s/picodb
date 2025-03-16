@@ -5,6 +5,7 @@ mod encodex;
 mod file;
 mod log;
 mod page;
+mod transaction;
 
 pub(crate) fn assert_borrowed_type<T: ?Sized + ToOwned>(value: Cow<T>) -> &T {
     match value {
