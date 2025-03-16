@@ -7,11 +7,11 @@ use crate::{
 };
 
 pub trait Transaction {
-    fn commit();
+    fn commit() -> Result<(), crate::error::Error>;
 
-    fn rollback();
+    fn rollback() -> Result<(), crate::error::Error>;
 
-    fn recover();
+    fn recover() -> Result<(), crate::error::Error>;
 
     fn pin(block_id: &BlockId);
 
@@ -41,15 +41,15 @@ struct PicoDBTransaction<'a, PathType: AsRef<Path>> {
 }
 
 impl<'a, P: AsRef<Path>> Transaction for PicoDBTransaction<'a, P> {
-    fn commit() {
+    fn commit() -> Result<(), crate::error::Error> {
         todo!()
     }
 
-    fn rollback() {
+    fn rollback() -> Result<(), crate::error::Error> {
         todo!()
     }
 
-    fn recover() {
+    fn recover() -> Result<(), crate::error::Error> {
         todo!()
     }
 

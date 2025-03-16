@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 mod buffer;
 mod encodex;
+pub mod error;
 mod file;
 mod log;
 mod page;

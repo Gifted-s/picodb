@@ -11,8 +11,6 @@ pub(crate) struct PageEncoder<'a> {
     pub(crate) types: &'a Fields,
 }
 
-
-
 // Sample layout of an Encoded Buffer 512 Bytes
 
 // [Data Section]            [Field Types]  [Starting Offsets]   [Num Offsets]
@@ -30,7 +28,6 @@ pub(crate) struct PageEncoder<'a> {
 // |     +-> Field 2 (offset 2)
 // |
 // +-> Field 1 (offset 0)
-
 
 pub(crate) struct PageDecoder;
 
